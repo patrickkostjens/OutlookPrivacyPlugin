@@ -836,55 +836,45 @@ namespace Deja.Crypto.BcPgp
 		/// </summary>
 		/// <param name="data">Data to decrypt and verify</param>
 		/// <returns>Returns decrypted data if signature verifies.</returns>
-        public byte[] DecryptAndVerify(byte[] data, bool ignoreIntegrityCheck = false)
-        {
+		public byte[] DecryptAndVerify(byte[] data, bool ignoreIntegrityCheck = false)
+		{
 			Context = new CryptoContext(Context);
 
 			var isArmored = ASCIIEncoding.ASCII.GetString(data).IndexOf("-----BEGIN PGP MESSAGE-----") > -1;
 
 			using (var dataIn = new MemoryStream(data))
 			{
-				if (isArmored)
+				if (!isArmored)
 				{
-					using (var armoredIn = new ArmoredInputStream(dataIn))
-					{
-						var factory = new PgpObjectFactory(armoredIn);
-
-						while (true)
-						{
-							var obj = factory.NextPgpObject();
-							if (obj is PgpMarker)
-								continue;
-
-							var ret = DecryptHandlePgpObject(obj);
-							if (Context.FailedIntegrityCheck && !ignoreIntegrityCheck)
-								throw new VerifyException("Data not integrity protected.");
-
-							return ret;
-						}
-					}
+					return DecryptBytes(ignoreIntegrityCheck, dataIn);
 				}
-				else
+
+				using (var armoredIn = new ArmoredInputStream(dataIn))
 				{
-					var factory = new PgpObjectFactory(dataIn);
-
-					while (true)
-					{
-						var obj = factory.NextPgpObject();
-						if (obj is PgpMarker)
-							continue;
-
-						var ret = DecryptHandlePgpObject(obj);
-						if (Context.FailedIntegrityCheck && !ignoreIntegrityCheck)
-							throw new VerifyException("Data not integrity protected.");
-
-						return ret;
-					}
+					return DecryptBytes(ignoreIntegrityCheck, armoredIn);
 				}
 			}
-        }
+		}
 
-		/// <summary>
+		private byte[] DecryptBytes(bool ignoreIntegrityCheck, Stream armoredIn)
+		{
+			var factory = new PgpObjectFactory(armoredIn);
+
+			while (true)
+			{
+				var obj = factory.NextPgpObject();
+				if (obj is PgpMarker)
+					continue;
+
+				var ret = DecryptHandlePgpObject(obj);
+				if (Context.FailedIntegrityCheck && !ignoreIntegrityCheck)
+					throw new VerifyException("Data not integrity protected.");
+
+				return ret;
+			}
+		}
+
+	    /// <summary>
 		/// Recursive PGP Object handler.
 		/// </summary>
 		/// <param name="obj">Object to handle</param>
