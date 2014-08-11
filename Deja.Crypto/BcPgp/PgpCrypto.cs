@@ -840,7 +840,7 @@ namespace Deja.Crypto.BcPgp
 		{
 			Context = new CryptoContext(Context);
 
-			var isArmored = ASCIIEncoding.ASCII.GetString(data).IndexOf("-----BEGIN PGP MESSAGE-----") > -1;
+			var isArmored = ASCIIEncoding.ASCII.GetString(data).Contains("-----BEGIN PGP MESSAGE-----");
 
 			using (var dataIn = new MemoryStream(data))
 			{
