@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using OutlookPrivacyPlugin.Models;
 using Outlook = Microsoft.Office.Interop.Outlook;
 using Office = Microsoft.Office.Core;
 
@@ -43,6 +44,13 @@ namespace OutlookPrivacyPlugin
 
 		#endregion
 
+	    private static OutlookPrivacyPlugin singletonInstance;
+
+	    public static OutlookPrivacyPlugin Instance
+	    {
+		    get { return singletonInstance; }
+	    }
+
 		static NLog.Logger logger = LogManager.GetCurrentClassLogger();
 
 
@@ -59,12 +67,13 @@ namespace OutlookPrivacyPlugin
 
 		// PGP Headers
 		// http://www.ietf.org/rfc/rfc4880.txt page 54
-		const string _pgpSignedHeader = "BEGIN PGP SIGNED MESSAGE";
-		const string _pgpEncryptedHeader = "BEGIN PGP MESSAGE";
-		const string _pgpHeaderPattern = "BEGIN PGP( SIGNED)? MESSAGE";
+		const string PgpSignedHeader = "BEGIN PGP SIGNED MESSAGE";
+		const string PgpEncryptedHeader = "BEGIN PGP MESSAGE";
+		const string PgpHeaderPattern = "BEGIN PGP( SIGNED)? MESSAGE";
 
 		private void OutlookGnuPG_Startup(object sender, EventArgs e)
 		{
+			singletonInstance = this;
 			// NLOG
 
 			//var nconfig = new LoggingConfiguration();
@@ -238,15 +247,13 @@ namespace OutlookPrivacyPlugin
 
 			if (mailItem.BodyFormat == Outlook.OlBodyFormat.olFormatPlain)
 			{
-				Match match = Regex.Match(mailItem.Body, _pgpHeaderPattern);
+				Match match = Regex.Match(mailItem.Body, PgpHeaderPattern);
 
-				_gpgCommandBar.GetButton("Verify").Enabled = (match.Value == _pgpSignedHeader);
-				_gpgCommandBar.GetButton("Decrypt").Enabled = (match.Value == _pgpEncryptedHeader);
+				_gpgCommandBar.GetButton("Verify").Enabled = (match.Value == PgpSignedHeader);
 			}
 			else
 			{
 				_gpgCommandBar.GetButton("Verify").Enabled = false;
-				_gpgCommandBar.GetButton("Decrypt").Enabled = false;
 			}
 		}
 		#endregion
@@ -352,14 +359,14 @@ namespace OutlookPrivacyPlugin
 			// Read mail
 			{
 				// Default: disable read-buttons
-				ribbon.DecryptButton.Enabled = ribbon.VerifyButton.Enabled = false;
+				ribbon.VerifyButton.Enabled = false;
 
 				// Look for PGP headers
 				Match match = null;
 				if (mailItem.Body != null)
-					match = Regex.Match(mailItem.Body, _pgpHeaderPattern);
+					match = Regex.Match(mailItem.Body, PgpHeaderPattern);
 
-				if (match != null && (_autoDecrypt || _settings.AutoDecrypt) && match.Value == _pgpEncryptedHeader)
+				if (match != null && (_autoDecrypt || _settings.AutoDecrypt) && match.Value == PgpEncryptedHeader)
 				{
 					if (mailItem.BodyFormat != Outlook.OlBodyFormat.olFormatPlain)
 					{
@@ -389,11 +396,11 @@ namespace OutlookPrivacyPlugin
 					_autoDecrypt = false;
 					DecryptEmail(mailItem);
 					// Update match again, in case decryption failed/cancelled.
-					match = Regex.Match(mailItem.Body, _pgpHeaderPattern);
+					match = Regex.Match(mailItem.Body, PgpHeaderPattern);
 
 					SetProperty(mailItem, "GnuPGSetting.Decrypted", true);
 				}
-				else if (match != null && _settings.AutoVerify && match.Value == _pgpSignedHeader)
+				else if (match != null && _settings.AutoVerify && match.Value == PgpSignedHeader)
 				{
 					if (mailItem.BodyFormat != Outlook.OlBodyFormat.olFormatPlain)
 					{
@@ -484,8 +491,7 @@ namespace OutlookPrivacyPlugin
 
 				if (match != null)
 				{
-					ribbon.VerifyButton.Enabled = (match.Value == _pgpSignedHeader);
-					ribbon.DecryptButton.Enabled = (match.Value == _pgpEncryptedHeader);
+					ribbon.VerifyButton.Enabled = (match.Value == PgpSignedHeader);
 				}
 			}
 
@@ -903,7 +909,6 @@ namespace OutlookPrivacyPlugin
 				_gpgCommandBar.Remove();
 				_gpgCommandBar.Add();
 				_gpgCommandBar.GetButton("Verify").Click += VerifyButton_Click;
-				_gpgCommandBar.GetButton("Decrypt").Click += DecryptButton_Click;
 				_gpgCommandBar.GetButton("Settings").Click += SettingsButton_Click;
 				_gpgCommandBar.GetButton("About").Click += AboutButton_Click;
 				_gpgCommandBar.RestorePosition(_settings);
@@ -937,33 +942,6 @@ namespace OutlookPrivacyPlugin
 			}
 
 			VerifyEmail(mailItem);
-		}
-
-		private void DecryptButton_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
-		{
-			// Get the selected item in Outlook and determine its type.
-			Outlook.Selection outlookSelection = Application.ActiveExplorer().Selection;
-			if (outlookSelection.Count <= 0)
-				return;
-
-			object selectedItem = outlookSelection[1];
-			Outlook.MailItem mailItem = selectedItem as Outlook.MailItem;
-
-			if (mailItem == null)
-			{
-				MessageBox.Show(
-					"OutlookGnuPG can only decrypt mails.",
-					"Invalid Item Type",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
-
-				return;
-			}
-
-			// Force open of mailItem with auto decrypt.
-			_autoDecrypt = true;
-			mailItem.Display(true);
-			//      DecryptEmail(mailItem);
 		}
 
 		private void AboutButton_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
@@ -1349,7 +1327,7 @@ namespace OutlookPrivacyPlugin
 			string mail = mailItem.Body;
 			Outlook.OlBodyFormat mailType = mailItem.BodyFormat;
 
-			if (Regex.IsMatch(mailItem.Body, _pgpSignedHeader) == false)
+			if (Regex.IsMatch(mailItem.Body, PgpSignedHeader) == false)
 			{
 				MessageBox.Show(
 					"Outlook Privacy cannot help here.",
@@ -1438,48 +1416,25 @@ namespace OutlookPrivacyPlugin
 			}
 		}
 
-		internal void DecryptEmail(Outlook.MailItem mailItem)
+		public MailModel DecryptEmail(Outlook.MailItem mailItem)
 		{
-			if (Regex.IsMatch(mailItem.Body, _pgpEncryptedHeader) == false)
+			if (Regex.IsMatch(mailItem.Body, PgpEncryptedHeader) == false)
 			{
-				MessageBox.Show(
-					"Outlook Privacy Plugin cannot help here.",
-					"Mail is not encrypted",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Exclamation);
-				return;
+				return null;
 			}
+
+			MailModel mailModel = null;
 
 			// Sometimes messages could contain multiple message blocks.  In that case just use the 
 			// very first one.
+			var firstPgpBlock = GetFirstPgpBlock(mailItem);
 
-			string firstPgpBlock = mailItem.Body;
-			int endMessagePosition = firstPgpBlock.IndexOf("-----END PGP MESSAGE-----") + "-----END PGP MESSAGE-----".Length;
-			if (endMessagePosition != -1)
-				firstPgpBlock = firstPgpBlock.Substring(0, endMessagePosition);
-
-			string charset = null;
-			try
-			{
-				charset = Regex.Match(firstPgpBlock, @"Charset:\s+([^\s\r\n]+)").Groups[1].Value;
-			}
-			catch
-			{
-			}
-
-			// Set default encoding if charset was missing from 
-			// message.
-			if (string.IsNullOrWhiteSpace(charset))
-				charset = "ISO-8859-1";
-
-			var encoding = Encoding.GetEncoding(charset);
+			var encoding = GetEncoding(firstPgpBlock);
 
 			CryptoContext Context;
 			byte[] cleardata = DecryptAndVerify(mailItem.To, ASCIIEncoding.ASCII.GetBytes(firstPgpBlock), out Context);
 			if (cleardata != null)
 			{
-				mailItem.Body = DecryptAndVerifyHeaderMessage + encoding.GetString(cleardata);
-
 				if (mailItem.BodyFormat == Outlook.OlBodyFormat.olFormatHTML)
 				{
 					// Don't HMTL encode or we will encode emails already in HTML format.
@@ -1488,19 +1443,31 @@ namespace OutlookPrivacyPlugin
 					// email.
 					var html = DecryptAndVerifyHeaderMessage.Replace("<", "&lt;").Replace(">", "&gt;") + encoding.GetString(cleardata);
 					html = html.Replace("\n", "<br/>");
-					mailItem.HTMLBody = "<html><body>" + html + "</body></html>";
+					html = "<html><body>" + html + "</body></html>";
+					mailModel = new HtmlMailModel
+					{
+						Body = html
+					};
+				}
+				else
+				{
+					var mailText = DecryptAndVerifyHeaderMessage + encoding.GetString(cleardata);
+					mailModel = new PlainMailModel
+					{
+						Body = mailText
+					};
 				}
 
 				// Decrypt all attachments
-				List<Microsoft.Office.Interop.Outlook.Attachment> mailAttachments = new List<Outlook.Attachment>();
-				foreach (Microsoft.Office.Interop.Outlook.Attachment attachment in mailItem.Attachments)
+				var mailAttachments = new List<Outlook.Attachment>();
+				foreach (Outlook.Attachment attachment in mailItem.Attachments)
 					mailAttachments.Add(attachment);
 
-				List<Attachment> attachments = new List<Attachment>();
+				var attachments = new List<Attachment>();
 
 				foreach (var attachment in mailAttachments)
 				{
-					Attachment a = new Attachment();
+					var a = new Attachment();
 
 					// content id
 
@@ -1592,15 +1559,45 @@ namespace OutlookPrivacyPlugin
 
 				}
 
-				foreach (var attachment in attachments)
-					mailItem.Attachments.Add(attachment.TempFile, attachment.AttachmentType, 1, attachment.FileName);
-
-				// Warning: Saving could save the message back to the server, not just locally
-				//mailItem.Save();
+				mailModel.Attachments = attachments;
 			}
+			return mailModel;
 		}
 
-		#endregion
+	    private static string GetFirstPgpBlock(Outlook.MailItem mailItem)
+	    {
+		    var firstPgpBlock = mailItem.Body;
+		    var endMessagePosition = firstPgpBlock.IndexOf("-----END PGP MESSAGE-----") + "-----END PGP MESSAGE-----".Length;
+		    if (endMessagePosition != -1)
+		    {
+			    firstPgpBlock = firstPgpBlock.Substring(0, endMessagePosition);
+		    }
+		    return firstPgpBlock;
+	    }
+
+	    private static Encoding GetEncoding(string firstPgpBlock)
+	    {
+		    string charset = null;
+		    try
+		    {
+			    charset = Regex.Match(firstPgpBlock, @"Charset:\s+([^\s\r\n]+)").Groups[1].Value;
+		    }
+		    catch
+		    {
+		    }
+
+		    // Set default encoding if charset was missing from 
+		    // message.
+		    if (string.IsNullOrWhiteSpace(charset))
+		    {
+			    charset = "UTF-8";
+		    }
+
+		    var encoding = Encoding.GetEncoding(charset);
+		    return encoding;
+	    }
+
+	    #endregion
 
 		bool PromptForPasswordAndKey()
 		{
@@ -1608,9 +1605,9 @@ namespace OutlookPrivacyPlugin
 				return true;
 
 			// Popup UI to select the passphrase and private key.
-			Passphrase passphraseDialog = new Passphrase(_settings.DefaultKey, "Key");
+			var passphraseDialog = new Passphrase(_settings.DefaultKey, "Key");
 			passphraseDialog.TopMost = true;
-			DialogResult passphraseResult = passphraseDialog.ShowDialog();
+			var passphraseResult = passphraseDialog.ShowDialog();
 			if (passphraseResult != DialogResult.OK)
 			{
 				// The user closed the passphrase dialog, prevent sending the mail

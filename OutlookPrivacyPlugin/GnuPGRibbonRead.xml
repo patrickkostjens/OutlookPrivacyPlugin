@@ -12,14 +12,6 @@
                   onAction="OnVerifyButton" 
                   getEnabled="GetEnabled" 
                   getImage="GetCustomImage" />
-          <button id="decryptButton" 
-                  size="normal"
-                  label="Decrypt"
-                  screentip="Decrypt message"
-                  supertip="Decrypt the GnuPG encrypted message." 
-                  onAction="OnDecryptButton" 
-                  getEnabled="GetEnabled" 
-                  getImage="GetCustomImage" />
           <button id="settingsButtonRead" 
                   size="normal"
                   label="Settings"

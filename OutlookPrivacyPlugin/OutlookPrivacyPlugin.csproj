@@ -200,6 +200,16 @@
     <Compile Include="GnuPGRibbon.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="IMailView.cs" />
+    <Compile Include="MailView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MailView.Designer.cs">
+      <DependentUpon>MailView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Models\HtmlMailModel.cs" />
+    <Compile Include="Models\MailModel.cs" />
+    <Compile Include="Models\PlainMailModel.cs" />
     <Compile Include="OutlookWrapper.cs" />
     <Compile Include="Passphrase.cs">
       <SubType>Form</SubType>
@@ -224,6 +234,9 @@
     </Compile>
     <EmbeddedResource Include="About.resx">
       <DependentUpon>About.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MailView.resx">
+      <DependentUpon>MailView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Passphrase.resx">
       <DependentUpon>Passphrase.cs</DependentUpon>

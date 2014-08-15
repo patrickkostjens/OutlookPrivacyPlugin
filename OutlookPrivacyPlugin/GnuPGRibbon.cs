@@ -51,7 +51,6 @@ namespace OutlookPrivacyPlugin
 		public GnuPGToggleButton SignButton;
 		public GnuPGToggleButton EncryptButton;
 		public GnuPGToggleButton VerifyButton;
-		public GnuPGToggleButton DecryptButton;
 		public GnuPGToggleButton AttachPublicKeyButton;
 
 		public Dictionary<string, ButtonStateData> ButtonState = new Dictionary<string, ButtonStateData>();
@@ -63,13 +62,11 @@ namespace OutlookPrivacyPlugin
 			SignButton = new GnuPGToggleButton("signButton");
 			EncryptButton = new GnuPGToggleButton("encryptButton");
 			VerifyButton = new GnuPGToggleButton("verifyButton");
-			DecryptButton = new GnuPGToggleButton("decryptButton");
 			AttachPublicKeyButton = new GnuPGToggleButton("attachPublicKeyButton");
 
 			Buttons.Add(SignButton.Id, SignButton);
 			Buttons.Add(EncryptButton.Id, EncryptButton);
 			Buttons.Add(VerifyButton.Id, VerifyButton);
-			Buttons.Add(DecryptButton.Id, DecryptButton);
 			Buttons.Add(AttachPublicKeyButton.Id, AttachPublicKeyButton);
 		}
 
@@ -103,7 +100,6 @@ namespace OutlookPrivacyPlugin
 			AttachPublicKeyButton.Checked = false;
 
 			// Read Mail
-			DecryptButton.Checked = settings.AutoDecrypt;
 			VerifyButton.Checked = settings.AutoVerify;
 		}
 
@@ -115,7 +111,6 @@ namespace OutlookPrivacyPlugin
 			ribbon.InvalidateControl(SignButton.Id);
 			ribbon.InvalidateControl(EncryptButton.Id);
 			ribbon.InvalidateControl(VerifyButton.Id);
-			ribbon.InvalidateControl(DecryptButton.Id);
 			ribbon.InvalidateControl(AttachPublicKeyButton.Id);
 		}
 
@@ -151,13 +146,6 @@ namespace OutlookPrivacyPlugin
 			OutlookPrivacyPlugin.SetProperty(mailItem, "GnuPGSetting.Encrypt", isPressed);
 			EncryptButton.Checked = isPressed;
 			ribbon.InvalidateControl(EncryptButton.Id);
-		}
-
-		public void OnDecryptButton(Office.IRibbonControl control)
-		{
-			Outlook.MailItem mailItem = ((Outlook.Inspector)control.Context).CurrentItem as Outlook.MailItem;
-			if (mailItem != null)
-				Globals.OutlookPrivacyPlugin.DecryptEmail(mailItem);
 		}
 
 		public void OnSignButton(Office.IRibbonControl control, bool isPressed)
@@ -268,7 +256,7 @@ namespace OutlookPrivacyPlugin
 					pictureDisp = ImageConverter.Convert(global::OutlookPrivacyPlugin.Properties.Resources.attach);
 					break;
 				default:
-					if ((control.Id == EncryptButton.Id) || (control.Id == DecryptButton.Id))
+					if ((control.Id == EncryptButton.Id))
 						pictureDisp = ImageConverter.Convert(global::OutlookPrivacyPlugin.Properties.Resources.lock_edit);
 					if ((control.Id == SignButton.Id) || (control.Id == VerifyButton.Id))
 						pictureDisp = ImageConverter.Convert(global::OutlookPrivacyPlugin.Properties.Resources.link_edit);
