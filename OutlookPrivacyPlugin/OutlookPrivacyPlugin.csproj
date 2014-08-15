@@ -200,7 +200,6 @@
     <Compile Include="GnuPGRibbon.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="GpgMePgp.cs" />
     <Compile Include="OutlookWrapper.cs" />
     <Compile Include="Passphrase.cs">
       <SubType>Form</SubType>
