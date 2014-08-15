@@ -29,8 +29,8 @@ namespace OutlookPrivacyPlugin
     /// Contants and members.
     /// </summary>
     private const string _cmdBarName = "OutlookGnuPG";
-    private Outlook.Explorer _explorer = null;
-    private Office.CommandBar _commandBar = null;
+    private Outlook.Explorer _explorer;
+    private Office.CommandBar _commandBar;
 
     // Button list/dictionary.
     private Dictionary<string, Office.CommandBarButton> _buttons = new Dictionary<string, Office.CommandBarButton>();
@@ -97,7 +97,7 @@ namespace OutlookPrivacyPlugin
       }
       _commandBar.Visible = true;
 
-      foreach (string btn in new string[] { "About", "Settings", "Verify" })
+      foreach (var btn in new[] { "About", "Settings", "Verify" })
       {
         _buttons.Add(btn, (Office.CommandBarButton)_commandBar.Controls.Add(Office.MsoControlType.msoControlButton,
                                                                             Type.Missing, Type.Missing, 1, true));

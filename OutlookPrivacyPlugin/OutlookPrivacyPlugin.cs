@@ -2,29 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Xml.Linq;
 using OutlookPrivacyPlugin.Models;
 using Outlook = Microsoft.Office.Interop.Outlook;
 using Office = Microsoft.Office.Core;
 
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Drawing;
 using System.IO;
-using System.Text;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Reflection;
-using OutlookPrivacyPlugin.Properties;
 using Exception = System.Exception;
 using anmar.SharpMimeTools;
-using System.Timers;
 
 using Deja.Crypto.BcPgp;
 using NLog;
-using NLog.Config;
-using NLog.Targets;
 
 namespace OutlookPrivacyPlugin
 {
@@ -38,8 +28,8 @@ namespace OutlookPrivacyPlugin
 		/// </summary>
 		private void InternalStartup()
 		{
-			this.Startup += new System.EventHandler(OutlookGnuPG_Startup);
-			this.Shutdown += new System.EventHandler(OutlookGnuPG_Shutdown);
+			this.Startup += OutlookGnuPG_Startup;
+			this.Shutdown += OutlookGnuPG_Shutdown;
 		}
 
 		#endregion
@@ -55,11 +45,11 @@ namespace OutlookPrivacyPlugin
 
 
 		private Properties.Settings _settings;
-		private GnuPGCommandBar _gpgCommandBar = null;
-		private bool _autoDecrypt = false;
+		private GnuPGCommandBar _gpgCommandBar;
+		private bool _autoDecrypt;
 		private Outlook.Explorers _explorers;
 		private Outlook.Inspectors _inspectors;        // Outlook inspectors collection
-		private System.Text.Encoding _encoding = UTF8Encoding.UTF8;
+		private Encoding _encoding = Encoding.UTF8;
 		// This dictionary holds our Wrapped Inspectors, Explorers, MailItems
 		private Dictionary<Guid, object> _WrappedObjects;
 
@@ -104,7 +94,7 @@ namespace OutlookPrivacyPlugin
 
 			// Initialize the outlook explorers
 			_explorers = this.Application.Explorers;
-			_explorers.NewExplorer += new Outlook.ExplorersEvents_NewExplorerEventHandler(OutlookGnuPG_NewExplorer);
+			_explorers.NewExplorer += OutlookGnuPG_NewExplorer;
 			for (int i = _explorers.Count; i >= 1; i--)
 			{
 				WrapExplorer(_explorers[i]);
@@ -112,7 +102,7 @@ namespace OutlookPrivacyPlugin
 
 			// Initialize the outlook inspectors
 			_inspectors = this.Application.Inspectors;
-			_inspectors.NewInspector += new Outlook.InspectorsEvents_NewInspectorEventHandler(OutlookGnuPG_NewInspector);
+			_inspectors.NewInspector += OutlookGnuPG_NewInspector;
 		}
 
 		/// <summary>
@@ -124,8 +114,8 @@ namespace OutlookPrivacyPlugin
 		private void OutlookGnuPG_Shutdown(object sender, EventArgs e)
 		{
 			// Unhook event handler
-			_inspectors.NewInspector -= new Outlook.InspectorsEvents_NewInspectorEventHandler(OutlookGnuPG_NewInspector);
-			_explorers.NewExplorer -= new Outlook.ExplorersEvents_NewExplorerEventHandler(OutlookGnuPG_NewExplorer);
+			_inspectors.NewInspector -= OutlookGnuPG_NewInspector;
+			_explorers.NewExplorer -= OutlookGnuPG_NewExplorer;
 
 			_WrappedObjects.Clear();
 			_WrappedObjects = null;
@@ -138,10 +128,10 @@ namespace OutlookPrivacyPlugin
 			var a = Assembly.GetExecutingAssembly();
 			var s = a.GetManifestResourceStream(key);
 
-			byte[] buff = new byte[s.Length];
+			var buff = new byte[s.Length];
 			var cnt = s.Read(buff, 0, buff.Length);
 
-			return UTF8Encoding.UTF8.GetString(buff, 0, cnt);
+			return Encoding.UTF8.GetString(buff, 0, cnt);
 		}
 
 		private GnuPGRibbon ribbon;
@@ -175,14 +165,14 @@ namespace OutlookPrivacyPlugin
 		/// <param name="explorer">the outlook explorer to manage</param>
 		private void WrapExplorer(Outlook.Explorer explorer)
 		{
-			if (_WrappedObjects.ContainsValue(explorer) == true)
+			if (_WrappedObjects.ContainsValue(explorer))
 				return;
 
-			ExplorerWrapper wrappedExplorer = new ExplorerWrapper(explorer);
-			wrappedExplorer.Dispose += new OutlookWrapperDisposeDelegate(ExplorerWrapper_Dispose);
-			wrappedExplorer.ViewSwitch += new ExplorerViewSwitchDelegate(wrappedExplorer_ViewSwitch);
-			wrappedExplorer.SelectionChange += new ExplorerSelectionChangeDelegate(wrappedExplorer_SelectionChange);
-			wrappedExplorer.Close += new ExplorerCloseDelegate(wrappedExplorer_Close);
+			var wrappedExplorer = new ExplorerWrapper(explorer);
+			wrappedExplorer.Dispose += ExplorerWrapper_Dispose;
+			wrappedExplorer.ViewSwitch += wrappedExplorer_ViewSwitch;
+			wrappedExplorer.SelectionChange += wrappedExplorer_SelectionChange;
+			wrappedExplorer.Close += wrappedExplorer_Close;
 			_WrappedObjects[wrappedExplorer.Id] = explorer;
 
 			AddGnuPGCommandBar(explorer);
@@ -195,11 +185,11 @@ namespace OutlookPrivacyPlugin
 		/// <param name="o">the wrapped Explorer object</param>
 		private void ExplorerWrapper_Dispose(Guid id, object o)
 		{
-			ExplorerWrapper wrappedExplorer = o as ExplorerWrapper;
-			wrappedExplorer.Dispose -= new OutlookWrapperDisposeDelegate(ExplorerWrapper_Dispose);
-			wrappedExplorer.ViewSwitch -= new ExplorerViewSwitchDelegate(wrappedExplorer_ViewSwitch);
-			wrappedExplorer.SelectionChange -= new ExplorerSelectionChangeDelegate(wrappedExplorer_SelectionChange);
-			wrappedExplorer.Close -= new ExplorerCloseDelegate(wrappedExplorer_Close);
+			var wrappedExplorer = o as ExplorerWrapper;
+			wrappedExplorer.Dispose -= ExplorerWrapper_Dispose;
+			wrappedExplorer.ViewSwitch -= wrappedExplorer_ViewSwitch;
+			wrappedExplorer.SelectionChange -= wrappedExplorer_SelectionChange;
+			wrappedExplorer.Close -= wrappedExplorer_Close;
 			_WrappedObjects.Remove(id);
 		}
 
@@ -241,7 +231,7 @@ namespace OutlookPrivacyPlugin
 			if (Selection.Count != 1)
 				return;
 
-			Outlook.MailItem mailItem = Selection[1] as Outlook.MailItem;
+			var mailItem = Selection[1] as Outlook.MailItem;
 			if (mailItem == null || mailItem.Body == null)
 				return;
 
@@ -269,7 +259,7 @@ namespace OutlookPrivacyPlugin
 		/// <param name="Inspector">the new created Inspector</param>
 		private void OutlookGnuPG_NewInspector(Outlook.Inspector inspector)
 		{
-			Outlook.MailItem mailItem = inspector.CurrentItem as Outlook.MailItem;
+			var mailItem = inspector.CurrentItem as Outlook.MailItem;
 			if (mailItem != null)
 			{
 				WrapMailItem(inspector);
@@ -282,15 +272,15 @@ namespace OutlookPrivacyPlugin
 		/// <param name="explorer">the outlook explorer to manage</param>
 		private void WrapMailItem(Outlook.Inspector inspector)
 		{
-			if (_WrappedObjects.ContainsValue(inspector) == true)
+			if (_WrappedObjects.ContainsValue(inspector))
 				return;
 
-			MailItemInspector wrappedMailItem = new MailItemInspector(inspector);
-			wrappedMailItem.Dispose += new OutlookWrapperDisposeDelegate(MailItemInspector_Dispose);
-			wrappedMailItem.MyClose += new MailItemInspectorCloseDelegate(mailItem_Close);
-			wrappedMailItem.Open += new MailItemInspectorOpenDelegate(mailItem_Open);
-			wrappedMailItem.Save += new MailItemInspectorSaveDelegate(mailItem_Save);
-			wrappedMailItem.Close += new InspectorCloseDelegate(wrappedMailItem_Close);
+			var wrappedMailItem = new MailItemInspector(inspector);
+			wrappedMailItem.Dispose += MailItemInspector_Dispose;
+			wrappedMailItem.MyClose += mailItem_Close;
+			wrappedMailItem.Open += mailItem_Open;
+			wrappedMailItem.Save += mailItem_Save;
+			wrappedMailItem.Close += wrappedMailItem_Close;
 			_WrappedObjects[wrappedMailItem.Id] = inspector;
 		}
 
@@ -306,11 +296,11 @@ namespace OutlookPrivacyPlugin
 		/// <param name="o">the wrapped mailItem object</param>
 		private void MailItemInspector_Dispose(Guid id, object o)
 		{
-			MailItemInspector wrappedMailItem = o as MailItemInspector;
-			wrappedMailItem.Dispose -= new OutlookWrapperDisposeDelegate(MailItemInspector_Dispose);
-			wrappedMailItem.MyClose -= new MailItemInspectorCloseDelegate(mailItem_Close);
-			wrappedMailItem.Open -= new MailItemInspectorOpenDelegate(mailItem_Open);
-			wrappedMailItem.Save -= new MailItemInspectorSaveDelegate(mailItem_Save);
+			var wrappedMailItem = o as MailItemInspector;
+			wrappedMailItem.Dispose -= MailItemInspector_Dispose;
+			wrappedMailItem.MyClose -= mailItem_Close;
+			wrappedMailItem.Open -= mailItem_Open;
+			wrappedMailItem.Save -= mailItem_Save;
 			_WrappedObjects.Remove(id);
 		}
 
@@ -370,10 +360,10 @@ namespace OutlookPrivacyPlugin
 				{
 					if (mailItem.BodyFormat != Outlook.OlBodyFormat.olFormatPlain)
 					{
-						StringBuilder body = new StringBuilder(mailItem.Body);
+						var body = new StringBuilder(mailItem.Body);
 						//mailItem.BodyFormat = Outlook.OlBodyFormat.olFormatPlain;
 
-						Stack<int> indexes = new Stack<int>();
+						var indexes = new Stack<int>();
 						for (int cnt = 0; cnt < body.Length; cnt++)
 						{
 							if (body[cnt] > 127)
@@ -404,10 +394,10 @@ namespace OutlookPrivacyPlugin
 				{
 					if (mailItem.BodyFormat != Outlook.OlBodyFormat.olFormatPlain)
 					{
-						StringBuilder body = new StringBuilder(mailItem.Body);
+						var body = new StringBuilder(mailItem.Body);
 						mailItem.BodyFormat = Outlook.OlBodyFormat.olFormatPlain;
 
-						Stack<int> indexes = new Stack<int>();
+						var indexes = new Stack<int>();
 						for (int cnt = 0; cnt < body.Length; cnt++)
 						{
 							if (body[cnt] > 127)
@@ -557,10 +547,10 @@ namespace OutlookPrivacyPlugin
 			if (string.IsNullOrEmpty(value))
 				return value;
 
-			StringBuilder builder = new StringBuilder();
+			var builder = new StringBuilder();
 
 			char[] bytes = value.ToCharArray();
-			foreach (char v in bytes)
+			foreach (var v in bytes)
 			{
 				// The following are not required to be encoded:
 				// - Tab (ASCII 9)
@@ -716,7 +706,7 @@ namespace OutlookPrivacyPlugin
 			// Extract files from MIME data
 
 
-			SharpMessage msg = new SharpMessage(cleartext);
+			var msg = new SharpMessage(cleartext);
 			string body = mailItem.Body;
 
 			var DecryptAndVerifyHeaderMessage = "** ";
@@ -827,7 +817,7 @@ namespace OutlookPrivacyPlugin
 					{
 						toSave = true;
 					}
-					if (toSave == true)
+					if (toSave)
 					{
 #if DISABLED
 		BoolEventArgs ev = e as BoolEventArgs;
@@ -924,7 +914,7 @@ namespace OutlookPrivacyPlugin
 				return;
 
 			object selectedItem = outlookSelection[1];
-			Outlook.MailItem mailItem = selectedItem as Outlook.MailItem;
+			var mailItem = selectedItem as Outlook.MailItem;
 
 			if (mailItem == null)
 			{
@@ -966,7 +956,7 @@ namespace OutlookPrivacyPlugin
 
 			Microsoft.Office.Interop.Outlook.Recipient recip;
 			Outlook.ExchangeUser exUser;
-			Microsoft.Office.Interop.Outlook.Application oOutlook =
+			var oOutlook =
 				   new Microsoft.Office.Interop.Outlook.Application();
 			Outlook.NameSpace oNS = oOutlook.GetNamespace("MAPI");
 
@@ -983,7 +973,7 @@ namespace OutlookPrivacyPlugin
 		#region Send Logic
 		private void Application_ItemSend(object Item, ref bool Cancel)
 		{
-			Outlook.MailItem mailItem = Item as Outlook.MailItem;
+			var mailItem = Item as Outlook.MailItem;
 
 			if (mailItem == null)
 				return;
@@ -1020,11 +1010,11 @@ namespace OutlookPrivacyPlugin
 				if (needToEncrypt)
 				{
 					// Popup UI to select the encryption targets 
-					List<string> mailRecipients = new List<string>();
+					var mailRecipients = new List<string>();
 					foreach (Outlook.Recipient mailRecipient in mailItem.Recipients)
-						mailRecipients.Add(GetAddressCN(((Outlook.Recipient)mailRecipient).Address));
+						mailRecipients.Add(GetAddressCN(mailRecipient.Address));
 
-					Recipient recipientDialog = new Recipient(mailRecipients); // Passing in the first addres, maybe it matches
+					var recipientDialog = new Recipient(mailRecipients); // Passing in the first addres, maybe it matches
 					recipientDialog.TopMost = true;
 					DialogResult recipientResult = recipientDialog.ShowDialog();
 
@@ -1035,7 +1025,7 @@ namespace OutlookPrivacyPlugin
 						return;
 					}
 
-					foreach (string r in recipientDialog.SelectedKeys)
+					foreach (var r in recipientDialog.SelectedKeys)
 						recipients.Add(r);
 
 					recipientDialog.Close();
@@ -1051,7 +1041,7 @@ namespace OutlookPrivacyPlugin
 					recipients.Add(GetSMTPAddress(mailItem));
 				}
 
-				List<Attachment> attachments = new List<Attachment>();
+				var attachments = new List<Attachment>();
 
 				// Sign and encrypt the plaintext mail
 				if ((needToSign) && (needToEncrypt))
@@ -1060,13 +1050,13 @@ namespace OutlookPrivacyPlugin
 					if (mail == null)
 						return;
 
-					List<Microsoft.Office.Interop.Outlook.Attachment> mailAttachments = new List<Outlook.Attachment>();
+					var mailAttachments = new List<Outlook.Attachment>();
 					foreach (Microsoft.Office.Interop.Outlook.Attachment attachment in mailItem.Attachments)
 						mailAttachments.Add(attachment);
 
 					foreach (var attachment in mailAttachments)
 					{
-						Attachment a = new Attachment();
+						var a = new Attachment();
 
 						a.TempFile = Path.GetTempPath();
 						a.FileName = attachment.FileName;
@@ -1101,13 +1091,13 @@ namespace OutlookPrivacyPlugin
 					if (mail == null)
 						return;
 
-					List<Microsoft.Office.Interop.Outlook.Attachment> mailAttachments = new List<Outlook.Attachment>();
+					var mailAttachments = new List<Outlook.Attachment>();
 					foreach (Microsoft.Office.Interop.Outlook.Attachment attachment in mailItem.Attachments)
 						mailAttachments.Add(attachment);
 
 					foreach (var attachment in mailAttachments)
 					{
-						Attachment a = new Attachment();
+						var a = new Attachment();
 
 						a.TempFile = Path.GetTempPath();
 						a.FileName = attachment.FileName;
@@ -1280,7 +1270,7 @@ namespace OutlookPrivacyPlugin
 		#region Receive Logic
 		internal void VerifyEmail(Outlook.MailItem mailItem)
 		{
-			string mail = mailItem.Body;
+			var mail = mailItem.Body;
 			Outlook.OlBodyFormat mailType = mailItem.BodyFormat;
 
 			if (Regex.IsMatch(mailItem.Body, PgpSignedHeader) == false)
@@ -1322,8 +1312,6 @@ namespace OutlookPrivacyPlugin
 			}
 			catch (PublicKeyNotFoundException ex)
 			{
-				Context = Crypto.Context;
-
 				var message = "** Unable to verify signature, missing public key.\n\n";
 
 				if (mailType == Outlook.OlBodyFormat.olFormatPlain)
@@ -1353,11 +1341,11 @@ namespace OutlookPrivacyPlugin
 				logFile = Path.Combine(logFile, "log.txt");
 
 				File.AppendAllText(logFile, "\n-------- " +
-					DateTime.Now.ToString() +
+					DateTime.Now +
 					" --------\n" +
 					msg +
 					"\n\n" +
-					ex.ToString());
+					ex);
 			}
 			catch
 			{
@@ -1380,7 +1368,7 @@ namespace OutlookPrivacyPlugin
 			var encoding = GetEncoding(firstPgpBlock);
 
 			CryptoContext Context;
-			byte[] cleardata = DecryptAndVerify(mailItem.To, ASCIIEncoding.ASCII.GetBytes(firstPgpBlock), out Context);
+			byte[] cleardata = DecryptAndVerify(mailItem.To, Encoding.ASCII.GetBytes(firstPgpBlock), out Context);
 			if (cleardata != null)
 			{
 				if (mailItem.BodyFormat == Outlook.OlBodyFormat.olFormatHTML)
@@ -1649,14 +1637,14 @@ namespace OutlookPrivacyPlugin
 	    #region General Logic
 		internal void About()
 		{
-			About aboutBox = new About();
+			var aboutBox = new About();
 			aboutBox.TopMost = true;
 			aboutBox.ShowDialog();
 		}
 
 		internal void Settings()
 		{
-			Settings settingsBox = new Settings(_settings);
+			var settingsBox = new Settings(_settings);
 			settingsBox.TopMost = true;
 			DialogResult result = settingsBox.ShowDialog();
 
@@ -1682,15 +1670,15 @@ namespace OutlookPrivacyPlugin
 		public IList<GnuKey> GetKeysForEncryption()
 		{
 			var crypto = new PgpCrypto(new CryptoContext());
-			List<GnuKey> keys = new List<GnuKey>();
+			var keys = new List<GnuKey>();
 
-			foreach (string key in crypto.GetPublicKeyUserIdsForEncryption())
+			foreach (var key in crypto.GetPublicKeyUserIdsForEncryption())
 			{
 				var match = Regex.Match(key, @"<(.*)>");
 				if (!match.Success)
 					continue;
 
-				GnuKey k = new GnuKey();
+				var k = new GnuKey();
 				k.Key = match.Groups[1].Value;
 				k.KeyDisplay = key;
 
@@ -1703,15 +1691,15 @@ namespace OutlookPrivacyPlugin
 		public IList<GnuKey> GetKeysForSigning()
 		{
 			var crypto = new PgpCrypto(new CryptoContext());
-			List<GnuKey> keys = new List<GnuKey>();
+			var keys = new List<GnuKey>();
 
-			foreach (string key in crypto.GetPublicKeyUserIdsForSign())
+			foreach (var key in crypto.GetPublicKeyUserIdsForSign())
 			{
 				var match = Regex.Match(key, @"<(.*)>");
 				if (!match.Success)
 					continue;
 
-				GnuKey k = new GnuKey();
+				var k = new GnuKey();
 				k.Key = match.Groups[1].Value;
 				k.KeyDisplay = key;
 
@@ -1750,9 +1738,9 @@ namespace OutlookPrivacyPlugin
 			char[] delimiters = { '\r', '\n' };
 			string result = string.Empty;
 
-			Regex r = new Regex("aka.*jpeg image of size");
+			var r = new Regex("aka.*jpeg image of size");
 
-			foreach (string s in msg.Split(delimiters))
+			foreach (var s in msg.Split(delimiters))
 			{
 				if (string.IsNullOrEmpty(s) || r.IsMatch(s))
 					continue;

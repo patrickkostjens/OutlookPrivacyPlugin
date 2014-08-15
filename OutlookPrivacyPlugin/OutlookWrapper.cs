@@ -103,14 +103,14 @@ namespace OutlookPrivacyPlugin
 
 		private void ConnectEvents()
 		{
-			Outlook.Explorer explorer = _wrapped as Outlook.Explorer;
+			var explorer = _wrapped as Outlook.Explorer;
 
 			// Hookup explorer events
-			((Outlook.ExplorerEvents_10_Event)explorer).Activate += new Outlook.ExplorerEvents_10_ActivateEventHandler(ExplorerWrapper_Activate);
-			((Outlook.ExplorerEvents_10_Event)explorer).Deactivate += new Outlook.ExplorerEvents_10_DeactivateEventHandler(ExplorerWrapper_Deactivate);
-			((Outlook.ExplorerEvents_10_Event)explorer).ViewSwitch += new Outlook.ExplorerEvents_10_ViewSwitchEventHandler(ExplorerWrapper_ViewSwitch);
-			((Outlook.ExplorerEvents_10_Event)explorer).Close += new Outlook.ExplorerEvents_10_CloseEventHandler(ExplorerWrapper_Close);
-			((Outlook.ExplorerEvents_10_Event)explorer).SelectionChange += new Outlook.ExplorerEvents_10_SelectionChangeEventHandler(ExplorerWrapper_SelectionChange);
+			((Outlook.ExplorerEvents_10_Event)explorer).Activate += ExplorerWrapper_Activate;
+			explorer.Deactivate += ExplorerWrapper_Deactivate;
+			explorer.ViewSwitch += ExplorerWrapper_ViewSwitch;
+			((Outlook.ExplorerEvents_10_Event)explorer).Close += ExplorerWrapper_Close;
+			explorer.SelectionChange += ExplorerWrapper_SelectionChange;
 		}
 
 		void ExplorerWrapper_Close()
@@ -144,14 +144,14 @@ namespace OutlookPrivacyPlugin
 
 		private void DisconnectEvents()
 		{
-			Outlook.Explorer explorer = _wrapped as Outlook.Explorer;
+			var explorer = _wrapped as Outlook.Explorer;
 
 			// Unhook events from the explorer
-			((Outlook.ExplorerEvents_10_Event)explorer).Activate -= new Outlook.ExplorerEvents_10_ActivateEventHandler(ExplorerWrapper_Activate);
-			((Outlook.ExplorerEvents_10_Event)explorer).Deactivate -= new Outlook.ExplorerEvents_10_DeactivateEventHandler(ExplorerWrapper_Deactivate);
-			((Outlook.ExplorerEvents_10_Event)explorer).ViewSwitch -= new Outlook.ExplorerEvents_10_ViewSwitchEventHandler(ExplorerWrapper_ViewSwitch);
-			((Outlook.ExplorerEvents_10_Event)explorer).Close -= new Outlook.ExplorerEvents_10_CloseEventHandler(ExplorerWrapper_Close);
-			((Outlook.ExplorerEvents_10_Event)explorer).SelectionChange -= new Outlook.ExplorerEvents_10_SelectionChangeEventHandler(ExplorerWrapper_SelectionChange);
+			((Outlook.ExplorerEvents_10_Event)explorer).Activate -= ExplorerWrapper_Activate;
+			explorer.Deactivate -= ExplorerWrapper_Deactivate;
+			explorer.ViewSwitch -= ExplorerWrapper_ViewSwitch;
+			((Outlook.ExplorerEvents_10_Event)explorer).Close -= ExplorerWrapper_Close;
+			explorer.SelectionChange -= ExplorerWrapper_SelectionChange;
 		}
 	}
 	#endregion
@@ -188,10 +188,10 @@ namespace OutlookPrivacyPlugin
 		/// </summary>
 		private void ConnectEvents()
 		{
-			Outlook.Inspector inspector = _wrapped as Outlook.Inspector;
+			var inspector = _wrapped as Outlook.Inspector;
 
 			// Hookup inspector events
-			((Outlook.InspectorEvents_Event)inspector).Close += new Outlook.InspectorEvents_CloseEventHandler(InspectorWrapper_Close);
+			((Outlook.InspectorEvents_Event)inspector).Close += InspectorWrapper_Close;
 		}
 
 		/// <summary>
@@ -211,10 +211,10 @@ namespace OutlookPrivacyPlugin
 		/// </summary>
 		protected virtual void DisconnectEvents()
 		{
-			Outlook.Inspector inspector = _wrapped as Outlook.Inspector;
+			var inspector = _wrapped as Outlook.Inspector;
 
 			// Unhook events from the inspector
-			((Outlook.InspectorEvents_Event)inspector).Close -= new Outlook.InspectorEvents_CloseEventHandler(InspectorWrapper_Close);
+			((Outlook.InspectorEvents_Event)inspector).Close -= InspectorWrapper_Close;
 		}
 	}
 	#endregion
@@ -240,7 +240,7 @@ namespace OutlookPrivacyPlugin
 		/// <summary>
 		/// Private member(s).
 		/// </summary>
-		private Outlook.MailItem _mailItem = null;
+		private Outlook.MailItem _mailItem;
 
 		/// <summary>
 		/// Public mailItem events.
@@ -269,11 +269,11 @@ namespace OutlookPrivacyPlugin
 		/// </summary>
 		private void ConnectEvents()
 		{
-			((Outlook.ItemEvents_10_Event)_mailItem).Open += new Outlook.ItemEvents_10_OpenEventHandler(MailItemInspector_Open);
-			((Outlook.ItemEvents_10_Event)_mailItem).Close += new Outlook.ItemEvents_10_CloseEventHandler(MailItemInspector_Close);
-			((Outlook.ItemEvents_10_Event)_mailItem).Write += new Outlook.ItemEvents_10_WriteEventHandler(MailItemInspector_Write);
-			((Outlook.ItemEvents_10_Event)_mailItem).Reply += new Outlook.ItemEvents_10_ReplyEventHandler(MailItemInspector_Reply);
-			((Outlook.ItemEvents_10_Event)_mailItem).ReplyAll += new Outlook.ItemEvents_10_ReplyAllEventHandler(MailItemInspector_ReplyAll);
+			_mailItem.Open += MailItemInspector_Open;
+			((Outlook.ItemEvents_10_Event)_mailItem).Close += MailItemInspector_Close;
+			_mailItem.Write += MailItemInspector_Write;
+			((Outlook.ItemEvents_10_Event)_mailItem).Reply += MailItemInspector_Reply;
+			((Outlook.ItemEvents_10_Event)_mailItem).ReplyAll += MailItemInspector_ReplyAll;
 		}
 
 		void MailItemInspector_ReplyAll(object Response, ref bool Cancel)
@@ -317,11 +317,11 @@ namespace OutlookPrivacyPlugin
 		/// </summary>
 		protected override void DisconnectEvents()
 		{
-			((Outlook.ItemEvents_10_Event)_mailItem).Open -= new Outlook.ItemEvents_10_OpenEventHandler(MailItemInspector_Open);
-			((Outlook.ItemEvents_10_Event)_mailItem).Close -= new Outlook.ItemEvents_10_CloseEventHandler(MailItemInspector_Close);
-			((Outlook.ItemEvents_10_Event)_mailItem).Write -= new Outlook.ItemEvents_10_WriteEventHandler(MailItemInspector_Write);
-			((Outlook.ItemEvents_10_Event)_mailItem).Reply -= new Outlook.ItemEvents_10_ReplyEventHandler(MailItemInspector_Reply);
-			((Outlook.ItemEvents_10_Event)_mailItem).ReplyAll -= new Outlook.ItemEvents_10_ReplyAllEventHandler(MailItemInspector_ReplyAll);
+			_mailItem.Open -= MailItemInspector_Open;
+			((Outlook.ItemEvents_10_Event)_mailItem).Close -= MailItemInspector_Close;
+			_mailItem.Write -= MailItemInspector_Write;
+			((Outlook.ItemEvents_10_Event)_mailItem).Reply -= MailItemInspector_Reply;
+			((Outlook.ItemEvents_10_Event)_mailItem).ReplyAll -= MailItemInspector_ReplyAll;
 
 			base.DisconnectEvents();
 		}
