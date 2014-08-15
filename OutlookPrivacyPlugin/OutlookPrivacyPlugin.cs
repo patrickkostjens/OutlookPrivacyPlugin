@@ -703,11 +703,7 @@ namespace OutlookPrivacyPlugin
 					this.Passphrase = null;
 
 					WriteErrorData("VerifyEmail", ex);
-					MessageBox.Show(
-						ex.Message,
-						"Outlook Privacy Error",
-						MessageBoxButtons.OK,
-						MessageBoxIcon.Error);
+					ShowErrorBox(ex.Message);
 				}
 
 				return;
@@ -916,7 +912,7 @@ namespace OutlookPrivacyPlugin
 			catch (Exception ex)
 			{
 				WriteErrorData("AddGnuPGCommandBar", ex);
-				MessageBox.Show(ex.Message);
+				ShowErrorBox(ex.Message);
 			}
 		}
 
@@ -932,11 +928,7 @@ namespace OutlookPrivacyPlugin
 
 			if (mailItem == null)
 			{
-				MessageBox.Show(
-					"OutlookGnuPG can only verify mails.",
-					"Invalid Item Type",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox("OutlookGnuPG can only verify mails.");
 
 				return;
 			}
@@ -1017,11 +1009,7 @@ namespace OutlookPrivacyPlugin
 
 				if (mailType != Outlook.OlBodyFormat.olFormatPlain)
 				{
-					MessageBox.Show(
-						"OutlookGnuPG can only sign/encrypt plain text mails. Please change the format, or disable signing/encrypting for this mail.",
-						"Invalid Mail Format",
-						MessageBoxButtons.OK,
-						MessageBoxIcon.Error);
+					ShowErrorBox("OutlookGnuPG can only sign/encrypt plain text mails. Please change the format, or disable signing/encrypting for this mail.");
 
 					Cancel = true; // Prevent sending the mail
 					return;
@@ -1054,11 +1042,7 @@ namespace OutlookPrivacyPlugin
 
 					if (recipients.Count == 0)
 					{
-						MessageBox.Show(
-							"OutlookGnuPG needs a recipient when encrypting. No keys were detected/selected.",
-							"Invalid Recipient Key",
-							MessageBoxButtons.OK,
-							MessageBoxIcon.Error);
+						ShowErrorBox("OutlookGnuPG needs a recipient when encrypting. No keys were detected/selected.");
 
 						Cancel = true; // Prevent sending the mail
 						return;
@@ -1156,20 +1140,12 @@ namespace OutlookPrivacyPlugin
 
 				if (ex.Message.ToLower().StartsWith("checksum"))
 				{
-					MessageBox.Show(
-						"Incorrect passphrase possibly entered.",
-						"Outlook Privacy Error",
-						MessageBoxButtons.OK,
-						MessageBoxIcon.Error);
+					ShowErrorBox("Incorrect passphrase possibly entered.");
 					return;
 				}
 
 				WriteErrorData("Application_ItemSend", ex);
-				MessageBox.Show(
-					ex.Message,
-					"Outlook Privacy Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox(ex.Message);
 
 				// Cancel sending
 				return;
@@ -1201,11 +1177,7 @@ namespace OutlookPrivacyPlugin
 				this.Passphrase = null;
 
 				WriteErrorData("SignEmail", ex);
-				MessageBox.Show(
-					ex.Message,
-					"Outlook Privacy Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox(ex.Message);
 
 				return null;
 			}
@@ -1233,11 +1205,7 @@ namespace OutlookPrivacyPlugin
 				this.Passphrase = null;
 
 				WriteErrorData("EncryptEmail", ex);
-				MessageBox.Show(
-					ex.Message,
-					"Outlook Privacy Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox(ex.Message);
 
 				return null;
 			}
@@ -1246,11 +1214,7 @@ namespace OutlookPrivacyPlugin
 				this.Passphrase = null;
 
 				WriteErrorData("EncryptEmail", e);
-				MessageBox.Show(
-					e.Message,
-					"Outlook Privacy Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox(e.Message);
 
 				return null;
 			}
@@ -1275,11 +1239,7 @@ namespace OutlookPrivacyPlugin
 			{
 				this.Passphrase = null;
 
-				MessageBox.Show(
-					ex.Message,
-					"Outlook Privacy Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox(ex.Message);
 
 				throw;
 			}
@@ -1310,11 +1270,7 @@ namespace OutlookPrivacyPlugin
 				this.Passphrase = null;
 
 				WriteErrorData("SignAndEncryptEmail", ex);
-				MessageBox.Show(
-					ex.Message,
-					"Outlook Privacy Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox(ex.Message);
 
 				throw;
 			}
@@ -1329,11 +1285,7 @@ namespace OutlookPrivacyPlugin
 
 			if (Regex.IsMatch(mailItem.Body, PgpSignedHeader) == false)
 			{
-				MessageBox.Show(
-					"Outlook Privacy cannot help here.",
-					"Mail is not signed",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Exclamation);
+				ShowErrorBox("Outlook Privacy cannot help here; mail is not signed");
 
 				return;
 			}
@@ -1384,11 +1336,7 @@ namespace OutlookPrivacyPlugin
 				this.Passphrase = null;
 
 				WriteErrorData("VerifyEmail", ex);
-				MessageBox.Show(
-					ex.Message,
-					"Outlook Privacy Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox(ex.Message);
 			}
 		}
 
@@ -1668,11 +1616,7 @@ namespace OutlookPrivacyPlugin
 				this.Passphrase = null;
 
 				WriteErrorData("DecryptAndVerify", ex);
-				MessageBox.Show(
-					ex.Message,
-					"Outlook Privacy Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
+				ShowErrorBox(ex.Message);
 
 			}
 			catch (Exception e)
@@ -1682,26 +1626,27 @@ namespace OutlookPrivacyPlugin
 
 				if (e.Message.ToLower().StartsWith("checksum"))
 				{
-					MessageBox.Show(
-						"Incorrect passphrase possibly entered.",
-						"Outlook Privacy Error",
-						MessageBoxButtons.OK,
-						MessageBoxIcon.Error);
+					ShowErrorBox("Incorrect passphrase possibly entered.");
 				}
 				else
 				{
-					MessageBox.Show(
-						e.Message,
-						"Outlook Privacy Error",
-						MessageBoxButtons.OK,
-						MessageBoxIcon.Error);
+					ShowErrorBox(e.Message);
 				}
 			}
 
 			return null;
 		}
 
-		#region General Logic
+	    private static void ShowErrorBox(string message)
+	    {
+		    MessageBox.Show(
+			    message,
+			    "Outlook Privacy Error",
+			    MessageBoxButtons.OK,
+			    MessageBoxIcon.Error);
+	    }
+
+	    #region General Logic
 		internal void About()
 		{
 			About aboutBox = new About();
