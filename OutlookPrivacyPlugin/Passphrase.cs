@@ -52,29 +52,5 @@ namespace OutlookPrivacyPlugin
 			if (PrivateKey.Text == _enterPhrase)
 				PreparePrivateKeyField();
 		}
-
-		private void OkButton_Enter(object sender, EventArgs e)
-		{
-			if (string.IsNullOrEmpty(PrivateKey.Text))
-				EmptyPrivateKeyField(OkButton);
-		}
-
-		private void OkButton_Click(object sender, EventArgs e)
-		{
-			if ((PrivateKey.Text == _enterPhrase) || (string.IsNullOrEmpty(PrivateKey.Text)))
-			{
-				// No Passphrase provided, complain!
-				Errors.SetError(PrivateKey, "No passphrase provided!");
-				PrivateKey.Margin = new Padding(3, 3, 20, 3);
-			}
-			else
-			{
-				Errors.SetError(PrivateKey, string.Empty);
-				PrivateKey.Margin = new Padding(3, 3, 3, 3);
-
-				// Hide the form and let our main addin take over again
-				Hide();
-			}
-		}
 	}
 }

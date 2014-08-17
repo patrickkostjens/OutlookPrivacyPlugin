@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
-using System.Drawing;
 
 namespace OutlookPrivacyPlugin
 {
@@ -90,7 +89,7 @@ namespace OutlookPrivacyPlugin
 			KeyBox.DisplayMember = "KeyDisplay";
 			KeyBox.ValueMember = "Key";
 
-			int boxHeight = (keys.Count > 10) ? KeyBox.ItemHeight * 10 : KeyBox.ItemHeight * keys.Count;
+			var boxHeight = (keys.Count > 10) ? KeyBox.ItemHeight * 10 : KeyBox.ItemHeight * keys.Count;
 			KeyBox.Height = boxHeight + 5;
 			Height = boxHeight + 90;
 

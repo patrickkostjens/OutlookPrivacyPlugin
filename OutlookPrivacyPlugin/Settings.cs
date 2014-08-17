@@ -28,8 +28,7 @@ namespace OutlookPrivacyPlugin
 			// MainTabControl.TabPages.RemoveByKey(ReadTab.Name);
 		}
 
-		private string m_DefaultKey;
-		internal string DefaultKey { get { return m_DefaultKey; } set { m_DefaultKey = value; } }
+		internal string DefaultKey { get; set; }
 
 		internal bool IgnoreIntegrityCheck
 		{
@@ -78,38 +77,6 @@ namespace OutlookPrivacyPlugin
 			get { return DefaultDomainTextBox.Text; }
 			set { DefaultDomainTextBox.Text = value; }
 		}
-
-		private void BrowseButton_Click(object sender, System.EventArgs e)
-		{
-		}
-
-		//private void PopulatePrivateKeys(bool gotGnu)
-		//{
-		//    IList<GnuKey> keys = gotGnu ? Globals.OutlookPrivacyPlugin.GetPrivateKeys() : new List<GnuKey>();
-
-		//    KeyBox.DataSource = keys;
-		//    KeyBox.DisplayMember = "KeyDisplay";
-		//    KeyBox.ValueMember = "Key";
-
-		//    if (KeyBox.Items.Count <= 0)
-		//        return;
-
-		//    KeyBox.SelectedValue = DefaultKey;
-
-		//    // Enlarge dialog to fit the longest key
-		//    using (Graphics g = CreateGraphics())
-		//    {
-		//        int maxSize = Width;
-		//        foreach (GnuKey key in keys)
-		//        {
-		//            int textWidth = (int)g.MeasureString(key.KeyDisplay, KeyBox.Font).Width + 50 + 27;
-		//            if (textWidth > maxSize)
-		//                maxSize = textWidth;
-		//        }
-		//        Width = maxSize;
-		//        CenterToScreen();
-		//    }
-		//}
 
 		private void OkButton_Click(object sender, System.EventArgs e)
 		{

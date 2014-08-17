@@ -41,13 +41,13 @@ namespace OutlookPrivacyPlugin
 		/// <summary>
 		/// The pointer to the wrapped object.
 		/// </summary>
-		protected object _wrapped;
+		protected object Wrapped;
 
 		/// <summary>
 		/// The unique ID of the wrapped object.
 		/// </summary>
-		private Guid _Id;
-		public Guid Id { get { return _Id; } private set { _Id = value; } }
+		private Guid _id;
+		public Guid Id { get { return _id; } private set { _id = value; } }
 
 		/// <summary>
 		/// Handle the close of the wrapped object.
@@ -55,7 +55,7 @@ namespace OutlookPrivacyPlugin
 		protected void OnClosed()
 		{
 			if (Dispose != null) { Dispose(Id, this); }
-			_wrapped = null;
+			Wrapped = null;
 		}
 
 		/// <summary>
@@ -65,7 +65,7 @@ namespace OutlookPrivacyPlugin
 		public OutlookWrapper(object o)
 		{
 			Id = Guid.NewGuid();
-			_wrapped = o;
+			Wrapped = o;
 		}
 	}
 	#endregion
@@ -103,7 +103,7 @@ namespace OutlookPrivacyPlugin
 
 		private void ConnectEvents()
 		{
-			var explorer = _wrapped as Outlook.Explorer;
+			var explorer = Wrapped as Outlook.Explorer;
 
 			// Hookup explorer events
 			((Outlook.ExplorerEvents_10_Event)explorer).Activate += ExplorerWrapper_Activate;
@@ -115,7 +115,7 @@ namespace OutlookPrivacyPlugin
 
 		void ExplorerWrapper_Close()
 		{
-			if (Close != null) { Close(_wrapped as Outlook.Explorer); }
+			if (Close != null) { Close(Wrapped as Outlook.Explorer); }
 			DisconnectEvents();
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
@@ -124,27 +124,27 @@ namespace OutlookPrivacyPlugin
 
 		void ExplorerWrapper_SelectionChange()
 		{
-			if (SelectionChange != null) { SelectionChange(_wrapped as Outlook.Explorer); }
+			if (SelectionChange != null) { SelectionChange(Wrapped as Outlook.Explorer); }
 		}
 
 		void ExplorerWrapper_ViewSwitch()
 		{
-			if (ViewSwitch != null) { ViewSwitch(_wrapped as Outlook.Explorer); }
+			if (ViewSwitch != null) { ViewSwitch(Wrapped as Outlook.Explorer); }
 		}
 
 		void ExplorerWrapper_Deactivate()
 		{
-			if (Deactivate != null) { Deactivate(_wrapped as Outlook.Explorer); }
+			if (Deactivate != null) { Deactivate(Wrapped as Outlook.Explorer); }
 		}
 
 		private void ExplorerWrapper_Activate()
 		{
-			if (Activate != null) { Activate(_wrapped as Outlook.Explorer); }
+			if (Activate != null) { Activate(Wrapped as Outlook.Explorer); }
 		}
 
 		private void DisconnectEvents()
 		{
-			var explorer = _wrapped as Outlook.Explorer;
+			var explorer = Wrapped as Outlook.Explorer;
 
 			// Unhook events from the explorer
 			((Outlook.ExplorerEvents_10_Event)explorer).Activate -= ExplorerWrapper_Activate;
@@ -188,7 +188,7 @@ namespace OutlookPrivacyPlugin
 		/// </summary>
 		private void ConnectEvents()
 		{
-			var inspector = _wrapped as Outlook.Inspector;
+			var inspector = Wrapped as Outlook.Inspector;
 
 			// Hookup inspector events
 			((Outlook.InspectorEvents_Event)inspector).Close += InspectorWrapper_Close;
@@ -199,7 +199,7 @@ namespace OutlookPrivacyPlugin
 		/// </summary>
 		void InspectorWrapper_Close()
 		{
-			if (Close != null) { Close(_wrapped as Outlook.Inspector); }
+			if (Close != null) { Close(Wrapped as Outlook.Inspector); }
 			DisconnectEvents();
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
@@ -211,7 +211,7 @@ namespace OutlookPrivacyPlugin
 		/// </summary>
 		protected virtual void DisconnectEvents()
 		{
-			var inspector = _wrapped as Outlook.Inspector;
+			var inspector = Wrapped as Outlook.Inspector;
 
 			// Unhook events from the inspector
 			((Outlook.InspectorEvents_Event)inspector).Close -= InspectorWrapper_Close;
@@ -224,13 +224,13 @@ namespace OutlookPrivacyPlugin
 	/// Delegate signature to handle (some) mailItem events.
 	/// </summary>
 	/// <param name="mailItem">the mailItem for which the event is fired</param>
-	/// <param name="Cancel">False when the event occurs. If the event procedure sets this argument to True,
+	/// <param name="cancel">False when the event occurs. If the event procedure sets this argument to True,
 	/// the open operation is not completed and the inspector is not displayed.</param>
-	public delegate void MailItemInspectorOpenDelegate(Outlook.MailItem mailItem, ref bool Cancel);
-	public delegate void MailItemInspectorSaveDelegate(Outlook.MailItem mailItem, ref bool Cancel);
-	public delegate void MailItemInspectorCloseDelegate(Outlook.MailItem mailItem, ref bool Cancel);
-	public delegate void MailItemInspectorReplyDelegate(Outlook.MailItem mailItem, ref bool Cancel);
-	public delegate void MailItemInspectorReplyAllDelegate(Outlook.MailItem mailItem, ref bool Cancel);
+	public delegate void MailItemInspectorOpenDelegate(Outlook.MailItem mailItem, ref bool cancel);
+	public delegate void MailItemInspectorSaveDelegate(Outlook.MailItem mailItem, ref bool cancel);
+	public delegate void MailItemInspectorCloseDelegate(Outlook.MailItem mailItem, ref bool cancel);
+	public delegate void MailItemInspectorReplyDelegate(Outlook.MailItem mailItem, ref bool cancel);
+	public delegate void MailItemInspectorReplyAllDelegate(Outlook.MailItem mailItem, ref bool cancel);
 
 	/// <summary>
 	/// The wrapper class to monitor a mailItem.
@@ -276,40 +276,40 @@ namespace OutlookPrivacyPlugin
 			((Outlook.ItemEvents_10_Event)_mailItem).ReplyAll += MailItemInspector_ReplyAll;
 		}
 
-		void MailItemInspector_ReplyAll(object Response, ref bool Cancel)
+		void MailItemInspector_ReplyAll(object response, ref bool cancel)
 		{
 			if (ReplyAll != null)
-				ReplyAll(_mailItem, ref Cancel);
+				ReplyAll(_mailItem, ref cancel);
 		}
 
-		void MailItemInspector_Reply(object Response, ref bool Cancel)
+		void MailItemInspector_Reply(object response, ref bool cancel)
 		{
 			if (Reply != null)
-				Reply(_mailItem, ref Cancel);
+				Reply(_mailItem, ref cancel);
 		}
 
 		/// <summary>
 		/// MailItem events: Open, Write and MyClose.
 		/// Calls the registered application mailItem events.
 		/// </summary>
-		/// <param name="Cancel">False when the event occurs. If the event procedure sets this argument to True,
+		/// <param name="cancel">False when the event occurs. If the event procedure sets this argument to True,
 		/// the open operation is not completed and the inspector is not displayed.</param>
-		private void MailItemInspector_Open(ref bool Cancel)
+		private void MailItemInspector_Open(ref bool cancel)
 		{
 			if (Open != null) 
-				Open(_mailItem, ref Cancel);
+				Open(_mailItem, ref cancel);
 		}
 
-		private void MailItemInspector_Write(ref bool Cancel)
+		private void MailItemInspector_Write(ref bool cancel)
 		{
 			if (Save != null) 
-				Save(_mailItem, ref Cancel);
+				Save(_mailItem, ref cancel);
 		}
 
-		private void MailItemInspector_Close(ref bool Cancel)
+		private void MailItemInspector_Close(ref bool cancel)
 		{
 			if (MyClose != null) 
-				MyClose(_mailItem, ref Cancel);
+				MyClose(_mailItem, ref cancel);
 		}
 
 		/// <summary>
