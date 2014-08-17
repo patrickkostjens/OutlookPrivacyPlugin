@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Xml;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
 using Org.BouncyCastle.Bcpg.OpenPgp;
 using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Utilities.IO;
-using Org.BouncyCastle.Utilities.Encoders;
 using Org.BouncyCastle.Bcpg;
 
 using NLog;
@@ -520,8 +516,6 @@ namespace Deja.Crypto.BcPgp
 			Context = new CryptoContext(Context);
 
 			var publicKey = GetPublicKeyForEncryption(email);
-			var sigKey = GetSecretKeyForSigning(email);
-			var literalData = new PgpLiteralDataGenerator();
 			var data = publicKey.GetEncoded();
 
 			using (var sout = new MemoryStream())
@@ -530,16 +524,6 @@ namespace Deja.Crypto.BcPgp
 				{
 					foreach (var header in headers)
 						armoredOut.SetHeader(header.Key, header.Value);
-
-					//using (var literalOut = literalData.Open(
-					//	armoredOut,
-					//	PgpLiteralData.Binary,
-					//	"email",
-					//	data.Length,
-					//	DateTime.UtcNow))
-					//{
-					//	literalOut.Write(data, 0, data.Length);
-					//}
 
 					armoredOut.Write(data);
 				}
@@ -553,7 +537,7 @@ namespace Deja.Crypto.BcPgp
 		/// </summary>
 		/// <param name="data">Data to encrypt</param>
 		/// <param name="recipients">List of email addresses</param>
-		/// <param name="recipients">Headers to add to ascii armor</param>
+		/// <param name="headers">Headers to add to ascii armor</param>
 		/// <returns>Returns ascii armored encrypted data</returns>
         public string Encrypt(byte[] data, IList<string> recipients, Dictionary<string, string> headers)
         {
@@ -756,7 +740,6 @@ namespace Deja.Crypto.BcPgp
 		{
 			Context = new CryptoContext(Context);
 
-			var crlf = new byte[] { (byte)'\r', (byte)'\n' };
 			var encoding = ASCIIEncoding.UTF8;
 
 			using (var dataIn = new MemoryStream(data))
@@ -1036,5 +1019,3 @@ namespace Deja.Crypto.BcPgp
 		}
 	}
 }
-
-// end

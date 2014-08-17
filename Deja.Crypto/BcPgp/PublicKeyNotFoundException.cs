@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Deja.Crypto.BcPgp
+﻿namespace Deja.Crypto.BcPgp
 {
 	/// <summary>
 	/// Public key could not be found

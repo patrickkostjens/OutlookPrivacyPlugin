@@ -1,24 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Xml;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 
 using Org.BouncyCastle.Bcpg.OpenPgp;
-using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Utilities.IO;
-using Org.BouncyCastle.Utilities.Encoders;
-using Org.BouncyCastle.Bcpg;
 
 namespace Deja.Crypto.BcPgp
 {
     public class CryptoContext
     {
-		readonly string _publicFilename = "pubring.gpg";
-		readonly string _privateFilename = "secring.gpg";
+	    private const string PublicFilename = "pubring.gpg";
+	    private const string PrivateFilename = "secring.gpg";
 
-		public CryptoContext()
+	    public CryptoContext()
 		{
 			IsEncrypted = false;
 			IsSigned = false;
@@ -30,10 +23,10 @@ namespace Deja.Crypto.BcPgp
 			OnePassSignature = null;
 			Signature = null;
 
-			List<string> gpgLocations = new List<string>();
+			var gpgLocations = new List<string>();
 
 			// If GNUPGHOME is set, add to list
-			var gpgHome = System.Environment.GetEnvironmentVariable("GNUPGHOME");
+			var gpgHome = Environment.GetEnvironmentVariable("GNUPGHOME");
 			if (gpgHome != null)
 				gpgLocations.Add(gpgHome);
 
@@ -50,25 +43,25 @@ namespace Deja.Crypto.BcPgp
 			}
 
 			// Add default location to list
-			gpgHome = System.Environment.GetEnvironmentVariable("APPDATA");
+			gpgHome = Environment.GetEnvironmentVariable("APPDATA");
 			gpgHome = Path.Combine(gpgHome, "gnupg");
 			gpgLocations.Add(gpgHome);
 
 			// Try all possible locations
 			foreach(var home in gpgLocations)
 			{
-				if (File.Exists(Path.Combine(home, _privateFilename)))
+				if (File.Exists(Path.Combine(home, PrivateFilename)))
 				{
-					PublicKeyRingFile = Path.Combine(gpgHome, _publicFilename);
-					PrivateKeyRingFile = Path.Combine(gpgHome, _privateFilename);
+					PublicKeyRingFile = Path.Combine(gpgHome, PublicFilename);
+					PrivateKeyRingFile = Path.Combine(gpgHome, PrivateFilename);
 					return;
 				}
 
 				// Portable gnupg will use a subfolder named 'home'
-				if (File.Exists(Path.Combine(home, "home", _privateFilename)))
+				if (File.Exists(Path.Combine(home, "home", PrivateFilename)))
 				{
-					PublicKeyRingFile = Path.Combine(gpgHome, "home", _publicFilename);
-					PrivateKeyRingFile = Path.Combine(gpgHome, "home", _privateFilename);
+					PublicKeyRingFile = Path.Combine(gpgHome, "home", PublicFilename);
+					PrivateKeyRingFile = Path.Combine(gpgHome, "home", PrivateFilename);
 					return;
 				}
 			}
@@ -128,7 +121,7 @@ namespace Deja.Crypto.BcPgp
 				foreach (string id in SignedBy.GetUserIds())
 				{
 					lastId = id;
-					if (id.IndexOf("@") > -1)
+					if (id.Contains("@"))
 						return id;
 				}
 
@@ -145,8 +138,7 @@ namespace Deja.Crypto.BcPgp
 					{
 						return OnePassSignature.KeyId.ToString("X");
 					}
-					else
-						return "Unknown KeyId";
+					return "Unknown KeyId";
 				}
 
 				return SignedBy.KeyId.ToString("X");
