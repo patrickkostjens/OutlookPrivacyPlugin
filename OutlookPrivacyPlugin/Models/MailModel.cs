@@ -11,6 +11,14 @@ namespace OutlookPrivacyPlugin.Models
 		public string Body;
 		public List<Attachment> Attachments;
 
-		public abstract void Show(IMailView mailView);
+		protected MailModel()
+		{
+			Attachments = new List<Attachment>();
+		}
+
+		public virtual void Show(IMailView mailView)
+		{
+			mailView.ShowAttachments(Attachments);
+		}
 	}
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -49,12 +50,6 @@ namespace OutlookPrivacyPlugin
 			decryptedMail.Show(this);
 		}
 
-		// Occurs when the form region is closed.
-		private void MailView_FormRegionClosed(object sender, System.EventArgs e)
-		{
-			
-		}
-
 		public void ShowHtmlEmail(string body)
 		{
 			htmlEmailView.Visible = true;
@@ -67,6 +62,42 @@ namespace OutlookPrivacyPlugin
 			plainEmailView.Visible = true;
 			htmlEmailView.Visible = false;
 			plainEmailView.Text = body;
+		}
+
+		public void ShowAttachments(IEnumerable<Attachment> attachments)
+		{
+			attachmentList.DataSource = attachments;
+		}
+
+		private void attachmentList_MouseDoubleClick(object sender, MouseEventArgs e)
+		{
+			var currentItems = attachmentList.SelectedItems;
+			foreach (Attachment attachment in currentItems)
+			{
+				System.Diagnostics.Process.Start(attachment.TempFile);
+			}
+		}
+
+		private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			var currentItems = attachmentList.SelectedItems;
+			foreach (Attachment attachment in currentItems)
+			{
+				var saveDialog = new SaveFileDialog
+				{
+					FileName = attachment.FileName,
+					// TODO Fix file type
+					Filter = string.Format("{0} | *.{0}|All files (*.*)|*.*", Path.GetExtension(attachment.FileName))
+				};
+
+				if (saveDialog.ShowDialog() != DialogResult.OK)
+				{
+					continue;
+				}
+				var fileStream = saveDialog.OpenFile();
+				File.OpenRead(attachment.TempFile).CopyTo(fileStream);
+				fileStream.Close();
+			}
 		}
 	}
 }

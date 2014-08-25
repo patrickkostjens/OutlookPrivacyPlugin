@@ -34,8 +34,17 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.plainEmailView = new System.Windows.Forms.Label();
 			this.htmlEmailView = new System.Windows.Forms.WebBrowser();
+			this.tableLayout = new System.Windows.Forms.TableLayoutPanel();
+			this.viewPanel = new System.Windows.Forms.Panel();
+			this.attachmentList = new System.Windows.Forms.ListBox();
+			this.attachmentContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.tableLayout.SuspendLayout();
+			this.viewPanel.SuspendLayout();
+			this.attachmentContextMenu.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// plainEmailView
@@ -52,23 +61,77 @@
 			this.htmlEmailView.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.htmlEmailView.IsWebBrowserContextMenuEnabled = false;
 			this.htmlEmailView.Location = new System.Drawing.Point(0, 0);
-			this.htmlEmailView.MinimumSize = new System.Drawing.Size(20, 20);
+			this.htmlEmailView.MinimumSize = new System.Drawing.Size(200, 200);
 			this.htmlEmailView.Name = "htmlEmailView";
-			this.htmlEmailView.Size = new System.Drawing.Size(322, 197);
+			this.htmlEmailView.Size = new System.Drawing.Size(721, 294);
 			this.htmlEmailView.TabIndex = 1;
 			this.htmlEmailView.Visible = false;
+			// 
+			// tableLayout
+			// 
+			this.tableLayout.ColumnCount = 1;
+			this.tableLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this.tableLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+			this.tableLayout.Controls.Add(this.viewPanel, 0, 1);
+			this.tableLayout.Controls.Add(this.attachmentList, 0, 0);
+			this.tableLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.tableLayout.Location = new System.Drawing.Point(0, 0);
+			this.tableLayout.Name = "tableLayout";
+			this.tableLayout.RowCount = 2;
+			this.tableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+			this.tableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.tableLayout.Size = new System.Drawing.Size(727, 330);
+			this.tableLayout.TabIndex = 2;
+			// 
+			// viewPanel
+			// 
+			this.viewPanel.Controls.Add(this.plainEmailView);
+			this.viewPanel.Controls.Add(this.htmlEmailView);
+			this.viewPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.viewPanel.Location = new System.Drawing.Point(3, 33);
+			this.viewPanel.Name = "viewPanel";
+			this.viewPanel.Size = new System.Drawing.Size(721, 294);
+			this.viewPanel.TabIndex = 3;
+			// 
+			// attachmentList
+			// 
+			this.attachmentList.ContextMenuStrip = this.attachmentContextMenu;
+			this.attachmentList.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.attachmentList.FormattingEnabled = true;
+			this.attachmentList.HorizontalScrollbar = true;
+			this.attachmentList.Location = new System.Drawing.Point(3, 3);
+			this.attachmentList.MultiColumn = true;
+			this.attachmentList.Name = "attachmentList";
+			this.attachmentList.Size = new System.Drawing.Size(721, 24);
+			this.attachmentList.TabIndex = 4;
+			this.attachmentList.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.attachmentList_MouseDoubleClick);
+			// 
+			// attachmentContextMenu
+			// 
+			this.attachmentContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.saveToolStripMenuItem});
+			this.attachmentContextMenu.Name = "attachmentContextMenu";
+			this.attachmentContextMenu.Size = new System.Drawing.Size(99, 26);
+			// 
+			// saveToolStripMenuItem
+			// 
+			this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
+			this.saveToolStripMenuItem.Size = new System.Drawing.Size(98, 22);
+			this.saveToolStripMenuItem.Text = "Save";
+			this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
 			// 
 			// MailView
 			// 
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-			this.Controls.Add(this.plainEmailView);
-			this.Controls.Add(this.htmlEmailView);
+			this.Controls.Add(this.tableLayout);
 			this.Name = "MailView";
-			this.Size = new System.Drawing.Size(322, 197);
+			this.Size = new System.Drawing.Size(727, 330);
 			this.FormRegionShowing += new System.EventHandler(this.MailView_FormRegionShowing);
-			this.FormRegionClosed += new System.EventHandler(this.MailView_FormRegionClosed);
+			this.tableLayout.ResumeLayout(false);
+			this.viewPanel.ResumeLayout(false);
+			this.viewPanel.PerformLayout();
+			this.attachmentContextMenu.ResumeLayout(false);
 			this.ResumeLayout(false);
-			this.PerformLayout();
 
 		}
 
@@ -92,6 +155,11 @@
 
 		private System.Windows.Forms.Label plainEmailView;
 		private System.Windows.Forms.WebBrowser htmlEmailView;
+		private System.Windows.Forms.TableLayoutPanel tableLayout;
+		private System.Windows.Forms.Panel viewPanel;
+		private System.Windows.Forms.ListBox attachmentList;
+		private System.Windows.Forms.ContextMenuStrip attachmentContextMenu;
+		private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
 
 
 		public partial class MailViewFactory : Microsoft.Office.Tools.Outlook.IFormRegionFactory

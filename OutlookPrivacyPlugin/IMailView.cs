@@ -11,5 +11,7 @@ namespace OutlookPrivacyPlugin
 		void ShowHtmlEmail(string body);
 
 		void ShowPlainEmail(string body);
+
+		void ShowAttachments(IEnumerable<Attachment> attachments);
 	}
 }

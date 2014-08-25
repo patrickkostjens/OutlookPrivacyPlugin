@@ -12,5 +12,10 @@ namespace OutlookPrivacyPlugin
 		public object AttachmentType { get; set; }
 		public string TempFile { get; set; }
 		public bool Encrypted { get; set; }
+
+		public override string ToString()
+		{
+			return FileName;
+		}
 	}
 }
