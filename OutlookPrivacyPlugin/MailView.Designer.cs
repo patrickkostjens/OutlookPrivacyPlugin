@@ -42,6 +42,7 @@
 			this.attachmentList = new System.Windows.Forms.ListBox();
 			this.attachmentContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.signatureLabel = new System.Windows.Forms.Label();
 			this.tableLayout.SuspendLayout();
 			this.viewPanel.SuspendLayout();
 			this.attachmentContextMenu.SuspendLayout();
@@ -50,7 +51,7 @@
 			// plainEmailView
 			// 
 			this.plainEmailView.AutoSize = true;
-			this.plainEmailView.Location = new System.Drawing.Point(3, 0);
+			this.plainEmailView.Location = new System.Drawing.Point(0, 0);
 			this.plainEmailView.Name = "plainEmailView";
 			this.plainEmailView.Size = new System.Drawing.Size(74, 13);
 			this.plainEmailView.TabIndex = 0;
@@ -71,14 +72,15 @@
 			// 
 			this.tableLayout.ColumnCount = 1;
 			this.tableLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-			this.tableLayout.Controls.Add(this.viewPanel, 0, 1);
 			this.tableLayout.Controls.Add(this.attachmentList, 0, 0);
+			this.tableLayout.Controls.Add(this.viewPanel, 0, 2);
+			this.tableLayout.Controls.Add(this.signatureLabel, 0, 1);
 			this.tableLayout.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tableLayout.Location = new System.Drawing.Point(0, 0);
 			this.tableLayout.Name = "tableLayout";
-			this.tableLayout.RowCount = 2;
+			this.tableLayout.RowCount = 3;
 			this.tableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+			this.tableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
 			this.tableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this.tableLayout.Size = new System.Drawing.Size(727, 330);
 			this.tableLayout.TabIndex = 2;
@@ -88,7 +90,7 @@
 			this.viewPanel.Controls.Add(this.plainEmailView);
 			this.viewPanel.Controls.Add(this.htmlEmailView);
 			this.viewPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.viewPanel.Location = new System.Drawing.Point(3, 33);
+			this.viewPanel.Location = new System.Drawing.Point(3, 53);
 			this.viewPanel.Name = "viewPanel";
 			this.viewPanel.Size = new System.Drawing.Size(721, 294);
 			this.viewPanel.TabIndex = 3;
@@ -120,6 +122,15 @@
 			this.saveToolStripMenuItem.Text = "Save";
 			this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
 			// 
+			// signatureLabel
+			// 
+			this.signatureLabel.AutoSize = true;
+			this.signatureLabel.Location = new System.Drawing.Point(3, 30);
+			this.signatureLabel.Name = "signatureLabel";
+			this.signatureLabel.Size = new System.Drawing.Size(76, 13);
+			this.signatureLabel.TabIndex = 5;
+			this.signatureLabel.Text = "signatureLabel";
+			// 
 			// MailView
 			// 
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -128,6 +139,7 @@
 			this.Size = new System.Drawing.Size(727, 330);
 			this.FormRegionShowing += new System.EventHandler(this.MailView_FormRegionShowing);
 			this.tableLayout.ResumeLayout(false);
+			this.tableLayout.PerformLayout();
 			this.viewPanel.ResumeLayout(false);
 			this.viewPanel.PerformLayout();
 			this.attachmentContextMenu.ResumeLayout(false);
@@ -160,6 +172,7 @@
 		private System.Windows.Forms.ListBox attachmentList;
 		private System.Windows.Forms.ContextMenuStrip attachmentContextMenu;
 		private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
+		private System.Windows.Forms.Label signatureLabel;
 
 
 		public partial class MailViewFactory : Microsoft.Office.Tools.Outlook.IFormRegionFactory

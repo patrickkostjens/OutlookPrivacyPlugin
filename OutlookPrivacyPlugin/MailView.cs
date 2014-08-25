@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Deja.Crypto.BcPgp;
+using OutlookPrivacyPlugin.Models;
 using Office = Microsoft.Office.Core;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -41,13 +42,31 @@ namespace OutlookPrivacyPlugin
 
 			var decryptedMail = pluginInstance.DecryptEmail(mailItem);
 
-			if (decryptedMail == null)
+			var signatureMail = pluginInstance.VerifyEmail(mailItem);
+
+			if (decryptedMail == null && signatureMail == null)
 			{
 				OutlookFormRegion.Visible = false;
 				return;
 			}
-			
-			decryptedMail.Show(this);
+			if (decryptedMail == null)
+			{
+				ShowSignature(signatureMail.Signature);
+			}
+			else
+			{
+				signatureLabel.Text = "No signature was found";
+			}
+
+			if (decryptedMail != null)
+			{
+				decryptedMail.Show(this);
+			}
+			else
+			{
+				htmlEmailView.Visible = false;
+				plainEmailView.Visible = false;
+			}
 		}
 
 		public void ShowHtmlEmail(string body)
@@ -67,6 +86,11 @@ namespace OutlookPrivacyPlugin
 		public void ShowAttachments(IEnumerable<Attachment> attachments)
 		{
 			attachmentList.DataSource = attachments;
+		}
+
+		public void ShowSignature(Signature signature)
+		{
+			signatureLabel.Text = signature.ToString();
 		}
 
 		private void attachmentList_MouseDoubleClick(object sender, MouseEventArgs e)

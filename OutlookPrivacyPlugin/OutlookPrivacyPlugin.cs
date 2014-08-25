@@ -571,11 +571,11 @@ namespace OutlookPrivacyPlugin
 			}
 
 			// 2. Verify signature
-			string message = null;
+			Signature signature = null;
 			if (sigMime != null)
 			{
 				context = new CryptoContext(Passphrase);
-				message = VerifySignature(mailItem, sigMime, sigHash, ref context);
+				signature = VerifySignature(mailItem, sigMime, sigHash, ref context);
 			}
 
 			if (context == null)
@@ -587,37 +587,18 @@ namespace OutlookPrivacyPlugin
 			var msg = new SharpMessage(cleartext);
 			string body = mailItem.Body;
 
-			var DecryptAndVerifyHeaderMessage = "** ";
-
-			if (context.IsEncrypted)
-				DecryptAndVerifyHeaderMessage += "Message decrypted. ";
-
-			if (context.FailedIntegrityCheck)
-				DecryptAndVerifyHeaderMessage += "Failed integrity check! ";
-
-			if (context.IsSigned)
-			{
-				DecryptAndVerifyHeaderMessage += context.SignatureValidated ? "Valid" : "Invalid";
-				DecryptAndVerifyHeaderMessage += " signature from \"" + context.SignedByUserId +
-					"\" with KeyId " + context.SignedByKeyId + ".";
-			}
-			else
-				DecryptAndVerifyHeaderMessage += "Message was unsigned.";
-
-			DecryptAndVerifyHeaderMessage += "\n\n";
-
 			if (mailItem.BodyFormat == Outlook.OlBodyFormat.olFormatPlain)
 			{
 				mailModel = new PlainMailModel
 				{
-					Body = DecryptAndVerifyHeaderMessage + msg.Body
+					Body = msg.Body
 				};
 			}
 			else if (mailItem.BodyFormat == Outlook.OlBodyFormat.olFormatHTML)
 			{
 				if (!msg.Body.TrimStart().ToLower().StartsWith("<html"))
 				{
-					body = DecryptAndVerifyHeaderMessage + msg.Body;
+					body = msg.Body;
 					body = System.Net.WebUtility.HtmlEncode(body);
 					body = body.Replace("\n", "<br />");
 
@@ -628,28 +609,10 @@ namespace OutlookPrivacyPlugin
 				}
 				else
 				{
-					// Find <body> tag and insert our message.
-
-					var matches = Regex.Match(msg.Body, @"(<body[^<]*>)", RegexOptions.IgnoreCase);
-					if (matches.Success)
+					mailModel = new HtmlMailModel
 					{
-						var bodyTag = matches.Groups[1].Value;
-
-						// Insert decryption message.
-						mailModel = new HtmlMailModel
-						{
-							Body = msg.Body.Replace(
-								bodyTag,
-								bodyTag + DecryptAndVerifyHeaderMessage.Replace("\n", "<br />"))
-						};
-					}
-					else
-					{
-						mailModel = new HtmlMailModel
-						{
-							Body = msg.Body
-						};
-					}
+						Body = msg.Body
+					};
 				}
 			}
 			else
@@ -658,7 +621,8 @@ namespace OutlookPrivacyPlugin
 
 				mailModel = new PlainMailModel
 				{
-					Body = msg.Body
+					Body = msg.Body,
+					Signature = signature
 				};
 			}
 
@@ -679,7 +643,7 @@ namespace OutlookPrivacyPlugin
 					var detachedsig = File.ReadAllText(tempFile);
 					var clearsig = CreateClearSignatureFromDetachedSignature(mailItem, sigHash, detachedsig);
 					var crypto = new PgpCrypto(context);
-					message = VerifyClearSignature(ref context, crypto, clearsig);
+					signature = VerifyClearSignature(ref context, crypto, clearsig);
 				}
 
 				mailModel.Attachments.Add(new Attachment
@@ -689,7 +653,8 @@ namespace OutlookPrivacyPlugin
 					FileName = fileName
 				});
 			}
-			mailModel.Body = message + mailModel.Body;
+			mailModel.Body = mailModel.Body;
+			mailModel.Signature = signature;
 			return mailModel;
 		}
 
@@ -712,7 +677,7 @@ namespace OutlookPrivacyPlugin
 		    return false;
 	    }
 
-	    private string VerifySignature(Outlook.MailItem mailItem, Outlook.Attachment sigMime, string sigHash, ref CryptoContext context)
+	    private Signature VerifySignature(Outlook.MailItem mailItem, Outlook.Attachment sigMime, string sigHash, ref CryptoContext context)
 	    {
 		    var crypto = new PgpCrypto(context);
 
@@ -727,24 +692,23 @@ namespace OutlookPrivacyPlugin
 		    return VerifyClearSignature(ref context, crypto, clearsig);
 	    }
 
-	    private string VerifyClearSignature(ref CryptoContext context, PgpCrypto crypto, string clearsig)
+	    private Signature VerifyClearSignature(ref CryptoContext context, PgpCrypto crypto, string clearsig)
 	    {
-		    string message;
+		    var signature = new Signature();
 
 		    try
 		    {
 			    var valid = crypto.VerifyClear(_encoding.GetBytes(clearsig));
 			    context = crypto.Context;
-			    message = valid ? "** Valid" : "** Invalid";
-
-			    message += " signature from \"" + context.SignedByUserId +
-			               "\" with KeyId " + context.SignedByKeyId + ".\n\n";
+			    signature.Valid = valid;
+			    signature.KeyId = context.SignedByKeyId;
+			    signature.UserId = context.SignedByUserId;
 		    }
 		    catch (PublicKeyNotFoundException ex)
 		    {
 			    Logger.Debug(ex.ToString());
 
-			    message = "** Unable to verify signature, missing public key.\n\n";
+			    return null;
 		    }
 		    catch (Exception ex)
 		    {
@@ -757,7 +721,7 @@ namespace OutlookPrivacyPlugin
 			    return null;
 		    }
 
-		    return message;
+		    return signature;
 	    }
 
 	    private string CreateClearSignatureFromDetachedSignature(Outlook.MailItem mailItem, string sigHash, string detachedsig)
@@ -786,15 +750,6 @@ namespace OutlookPrivacyPlugin
 
 		    Logger.Trace(clearsig);
 		    return clearsig;
-	    }
-
-	    private static void PrependMessageToMail(Outlook.MailItem mailItem, string message)
-	    {
-		    var mailType = mailItem.BodyFormat;
-		    if (mailType == Outlook.OlBodyFormat.olFormatPlain)
-		    {
-			    mailItem.Body = message + mailItem.Body;
-		    }
 	    }
 
 	    /// <summary>
@@ -1271,15 +1226,13 @@ namespace OutlookPrivacyPlugin
 		#endregion
 
 		#region Receive Logic
-		internal void VerifyEmail(Outlook.MailItem mailItem)
+		public MailModel VerifyEmail(Outlook.MailItem mailItem)
 		{
-			var mail = mailItem.Body;
+			var mail = mailItem.Body ?? mailItem.HTMLBody;
 
-			if (Regex.IsMatch(mailItem.Body, PgpSignedHeader) == false)
+			if (Regex.IsMatch(mail, PgpSignedHeader) == false)
 			{
-				ShowErrorBox("Outlook Privacy cannot help here; mail is not signed");
-
-				return;
+				return null;
 			}
 
 			var context = new CryptoContext(Passphrase);
@@ -1289,19 +1242,29 @@ namespace OutlookPrivacyPlugin
 			{
 				var valid = crypto.Verify(_encoding.GetBytes(mail));
 				context = crypto.Context;
-				var message = valid ? "** Valid" : "** Invalid";
 
-				message += " signature from \"" + context.SignedByUserId +
-						"\" with KeyId " + context.SignedByKeyId + ".\n\n";
+				var signature = new Signature
+				{
+					KeyId = context.SignedByKeyId,
+					UserId = context.SignedByUserId,
+					Valid = valid
+				};
 
-				PrependMessageToMail(mailItem, message);
+				if (mailItem.BodyFormat == Outlook.OlBodyFormat.olFormatHTML)
+				{
+					return new HtmlMailModel
+					{
+						Signature = signature,
+						Body = mailItem.HTMLBody
+					};
+				}
+				return new PlainMailModel
+				{
+					Signature = signature,
+					Body = mailItem.Body
+				};
 			}
-			catch (PublicKeyNotFoundException ex)
-			{
-				var message = "** Unable to verify signature, missing public key.\n\n";
-
-				PrependMessageToMail(mailItem, message);
-			}
+			catch (PublicKeyNotFoundException ex) { }
 			catch (Exception ex)
 			{
 				Passphrase = null;
@@ -1309,6 +1272,7 @@ namespace OutlookPrivacyPlugin
 				WriteErrorData("VerifyEmail", ex);
 				ShowErrorBox(ex.Message);
 			}
+			return null;
 		}
 
 		void WriteErrorData(string msg, Exception ex)
@@ -1361,7 +1325,7 @@ namespace OutlookPrivacyPlugin
 				// Office has a safe html module they use to prevent security issues.
 				// Not encoding here should be no worse then reading a standard HTML
 				// email.
-				var html = _decryptAndVerifyHeaderMessage.Replace("<", "&lt;").Replace(">", "&gt;") + encoding.GetString(cleardata);
+				var html = encoding.GetString(cleardata);
 				html = html.Replace("\n", "<br/>");
 				html = "<html><body>" + html + "</body></html>";
 				mailModel = new HtmlMailModel
@@ -1371,7 +1335,7 @@ namespace OutlookPrivacyPlugin
 			}
 			else
 			{
-				var mailText = _decryptAndVerifyHeaderMessage + encoding.GetString(cleardata);
+				var mailText = encoding.GetString(cleardata);
 				mailModel = new PlainMailModel
 				{
 					Body = mailText
@@ -1543,28 +1507,6 @@ namespace OutlookPrivacyPlugin
 			{
 				var cleartext = crypto.DecryptAndVerify(data, _settings.IgnoreIntegrityCheck);
 				context = crypto.Context;
-
-				// NOT USED YET.
-				
-				//DecryptAndVerifyHeaderMessage = "** ";
-
-				//if (Context.IsEncrypted)
-				//	DecryptAndVerifyHeaderMessage += "Message decrypted. ";
-
-				//if (Context.IsSigned && Context.SignatureValidated)
-				//{
-				//	DecryptAndVerifyHeaderMessage += "Valid signature from \"" + Context.SignedByUserId +
-				//		"\" with KeyId " + Context.SignedByKeyId;
-				//}
-				//else if (Context.IsSigned)
-				//{
-				//	DecryptAndVerifyHeaderMessage += "Invalid signature from \"" + Context.SignedByUserId +
-				//		"\" with KeyId " + Context.SignedByKeyId + ".";
-				//}
-				//else
-				//	DecryptAndVerifyHeaderMessage += "Message was unsigned.";
-
-				//DecryptAndVerifyHeaderMessage += "\n\n";
 
 				outContext = context;
 				return cleartext;

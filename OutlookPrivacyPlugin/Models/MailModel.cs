@@ -8,8 +8,9 @@ namespace OutlookPrivacyPlugin.Models
 {
 	public abstract class MailModel
 	{
-		public string Body;
-		public List<Attachment> Attachments;
+		public string Body { get; set; }
+		public List<Attachment> Attachments { get; set; }
+		public Signature Signature { get; set; }
 
 		protected MailModel()
 		{
