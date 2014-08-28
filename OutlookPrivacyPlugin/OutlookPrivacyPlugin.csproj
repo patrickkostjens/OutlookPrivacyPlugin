@@ -210,6 +210,7 @@
     <Compile Include="Models\HtmlMailModel.cs" />
     <Compile Include="Models\MailModel.cs" />
     <Compile Include="Models\PlainMailModel.cs" />
+    <Compile Include="Models\Signature.cs" />
     <Compile Include="OutlookWrapper.cs" />
     <Compile Include="Passphrase.cs">
       <SubType>Form</SubType>
