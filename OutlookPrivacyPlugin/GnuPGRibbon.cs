@@ -50,7 +50,6 @@ namespace OutlookPrivacyPlugin
 
 		public GnuPGToggleButton SignButton;
 		public GnuPGToggleButton EncryptButton;
-		public GnuPGToggleButton VerifyButton;
 		public GnuPGToggleButton AttachPublicKeyButton;
 
 		public Dictionary<string, ButtonStateData> ButtonState = new Dictionary<string, ButtonStateData>();
@@ -61,12 +60,10 @@ namespace OutlookPrivacyPlugin
 		{
 			SignButton = new GnuPGToggleButton("signButton");
 			EncryptButton = new GnuPGToggleButton("encryptButton");
-			VerifyButton = new GnuPGToggleButton("verifyButton");
 			AttachPublicKeyButton = new GnuPGToggleButton("attachPublicKeyButton");
 
 			Buttons.Add(SignButton.Id, SignButton);
 			Buttons.Add(EncryptButton.Id, EncryptButton);
-			Buttons.Add(VerifyButton.Id, VerifyButton);
 			Buttons.Add(AttachPublicKeyButton.Id, AttachPublicKeyButton);
 		}
 
@@ -98,9 +95,6 @@ namespace OutlookPrivacyPlugin
 			EncryptButton.Checked = settings.AutoEncrypt;
 			SignButton.Checked = settings.AutoSign;
 			AttachPublicKeyButton.Checked = false;
-
-			// Read Mail
-			VerifyButton.Checked = settings.AutoVerify;
 		}
 
 		internal void InvalidateButtons()
@@ -110,7 +104,6 @@ namespace OutlookPrivacyPlugin
 
 			ribbon.InvalidateControl(SignButton.Id);
 			ribbon.InvalidateControl(EncryptButton.Id);
-			ribbon.InvalidateControl(VerifyButton.Id);
 			ribbon.InvalidateControl(AttachPublicKeyButton.Id);
 		}
 
@@ -169,13 +162,6 @@ namespace OutlookPrivacyPlugin
 			OutlookPrivacyPlugin.SetProperty(mailItem, "GnuPGSetting.Sign", isPressed);
 			SignButton.Checked = isPressed;
 			ribbon.InvalidateControl(SignButton.Id);
-		}
-
-		public void OnVerifyButton(Office.IRibbonControl control)
-		{
-			Outlook.MailItem mailItem = ((Outlook.Inspector)control.Context).CurrentItem as Outlook.MailItem;
-			if (mailItem != null)
-				Globals.OutlookPrivacyPlugin.VerifyEmail(mailItem);
 		}
 
 		public void OnAttachPublicKeyButton(Office.IRibbonControl control)
@@ -256,9 +242,9 @@ namespace OutlookPrivacyPlugin
 					pictureDisp = ImageConverter.Convert(global::OutlookPrivacyPlugin.Properties.Resources.attach);
 					break;
 				default:
-					if ((control.Id == EncryptButton.Id))
+					if (control.Id == EncryptButton.Id)
 						pictureDisp = ImageConverter.Convert(global::OutlookPrivacyPlugin.Properties.Resources.lock_edit);
-					if ((control.Id == SignButton.Id) || (control.Id == VerifyButton.Id))
+					if (control.Id == SignButton.Id)
 						pictureDisp = ImageConverter.Convert(global::OutlookPrivacyPlugin.Properties.Resources.link_edit);
 					break;
 			}

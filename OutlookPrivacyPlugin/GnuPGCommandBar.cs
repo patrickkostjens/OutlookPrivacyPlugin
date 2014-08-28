@@ -87,7 +87,7 @@ namespace OutlookPrivacyPlugin
 			}
 			CommandBar.Visible = true;
 
-			foreach (var btn in new[] {"About", "Settings", "Verify"})
+			foreach (var btn in new[] {"About", "Settings"})
 			{
 				_buttons.Add(btn, (Office.CommandBarButton) CommandBar.Controls.Add(Office.MsoControlType.msoControlButton,
 					Type.Missing, Type.Missing, 1, true));
@@ -97,11 +97,9 @@ namespace OutlookPrivacyPlugin
 			}
 
 			// http://www.kebabshopblues.co.uk/2007/01/04/visual-studio-2005-tools-for-office-commandbarbutton-faceid-property/
-			_buttons["Verify"].FaceId = 719;
 			_buttons["About"].FaceId = 700;
 			_buttons["Settings"].FaceId = 2144;
 
-			_buttons["Verify"].Picture = ImageConverter.Convert(Properties.Resources.link_edit);
 			_buttons["About"].Picture = ImageConverter.Convert(Properties.Resources.Logo);
 			_buttons["Settings"].Picture = ImageConverter.Convert(Properties.Resources.database_gear);
 		}

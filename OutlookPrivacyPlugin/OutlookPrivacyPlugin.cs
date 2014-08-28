@@ -147,7 +147,6 @@ namespace OutlookPrivacyPlugin
 			var wrappedExplorer = new ExplorerWrapper(explorer);
 			wrappedExplorer.Dispose += ExplorerWrapper_Dispose;
 			wrappedExplorer.ViewSwitch += wrappedExplorer_ViewSwitch;
-			wrappedExplorer.SelectionChange += wrappedExplorer_SelectionChange;
 			wrappedExplorer.Close += wrappedExplorer_Close;
 			_wrappedObjects[wrappedExplorer.Id] = explorer;
 
@@ -164,7 +163,6 @@ namespace OutlookPrivacyPlugin
 			var wrappedExplorer = o as ExplorerWrapper;
 			wrappedExplorer.Dispose -= ExplorerWrapper_Dispose;
 			wrappedExplorer.ViewSwitch -= wrappedExplorer_ViewSwitch;
-			wrappedExplorer.SelectionChange -= wrappedExplorer_SelectionChange;
 			wrappedExplorer.Close -= wrappedExplorer_Close;
 			_wrappedObjects.Remove(id);
 		}
@@ -190,31 +188,6 @@ namespace OutlookPrivacyPlugin
 			_gpgCommandBar.CommandBar.Visible = explorer.CurrentFolder.DefaultMessageClass == "IPM.Note";
 		}
 
-	    /// <summary>
-		/// WrapEvent fired for SelectionChange event.
-		/// </summary>
-		/// <param name="explorer">the explorer for which a selectionchange event fired.</param>
-		void wrappedExplorer_SelectionChange(Outlook.Explorer explorer)
-		{
-			var selection = explorer.Selection;
-			if (selection.Count != 1)
-				return;
-
-			var mailItem = selection[1] as Outlook.MailItem;
-			if (mailItem == null || mailItem.Body == null)
-				return;
-
-			if (mailItem.BodyFormat == Outlook.OlBodyFormat.olFormatPlain)
-			{
-				var match = Regex.Match(mailItem.Body, PgpHeaderPattern);
-
-				_gpgCommandBar.GetButton("Verify").Enabled = (match.Value == PgpSignedHeader);
-			}
-			else
-			{
-				_gpgCommandBar.GetButton("Verify").Enabled = false;
-			}
-		}
 		#endregion
 
 		#region Inspector Logic
@@ -311,9 +284,6 @@ namespace OutlookPrivacyPlugin
 			else
 			// Read mail
 			{
-				// Default: disable read-buttons
-				_ribbon.VerifyButton.Enabled = false;
-
 				// Look for PGP headers
 				Match match = null;
 				if (mailItem.Body != null)
@@ -354,11 +324,6 @@ namespace OutlookPrivacyPlugin
 				else
 				{
 					HandleMailWithoutPgpBody(mailItem);
-				}
-
-				if (match != null)
-				{
-					_ribbon.VerifyButton.Enabled = (match.Value == PgpSignedHeader);
 				}
 			}
 
@@ -853,7 +818,6 @@ namespace OutlookPrivacyPlugin
 				_gpgCommandBar = new GnuPGCommandBar(activeExplorer);
 				_gpgCommandBar.Remove();
 				_gpgCommandBar.Add();
-				_gpgCommandBar.GetButton("Verify").Click += VerifyButton_Click;
 				_gpgCommandBar.GetButton("Settings").Click += SettingsButton_Click;
 				_gpgCommandBar.GetButton("About").Click += AboutButton_Click;
 				_gpgCommandBar.RestorePosition(_settings);
@@ -863,26 +827,6 @@ namespace OutlookPrivacyPlugin
 				WriteErrorData("AddGnuPGCommandBar", ex);
 				ShowErrorBox(ex.Message);
 			}
-		}
-
-		private void VerifyButton_Click(Office.CommandBarButton ctrl, ref bool cancelDefault)
-		{
-			// Get the selected item in Outlook and determine its type.
-			var outlookSelection = Application.ActiveExplorer().Selection;
-			if (outlookSelection.Count <= 0)
-				return;
-
-			object selectedItem = outlookSelection[1];
-			var mailItem = selectedItem as Outlook.MailItem;
-
-			if (mailItem == null)
-			{
-				ShowErrorBox("OutlookGnuPG can only verify mails.");
-
-				return;
-			}
-
-			VerifyEmail(mailItem);
 		}
 
 		private void AboutButton_Click(Office.CommandBarButton ctrl, ref bool cancelDefault)

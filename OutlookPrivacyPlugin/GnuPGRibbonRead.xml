@@ -4,14 +4,6 @@
       <tab idMso="TabReadMessage">
         <group id="GnuPGGroupRead"
                label="OpenPGP">
-          <button id="verifyButton" 
-                  size="normal"
-                  label="Verify"
-                  screentip="Verify message"
-                  supertip="Verify the digital signature of the message." 
-                  onAction="OnVerifyButton" 
-                  getEnabled="GetEnabled" 
-                  getImage="GetCustomImage" />
           <button id="settingsButtonRead" 
                   size="normal"
                   label="Settings"
